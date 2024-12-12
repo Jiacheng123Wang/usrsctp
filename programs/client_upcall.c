@@ -86,22 +86,22 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 {
 	int events = usrsctp_get_events(sock);
 
-	if (events & SCTP_EVENT_WRITE && !done && !connected) {
+	if (events & USR_SCTP_EVENT_WRITE && !done && !connected) {
 		connected = 1;
 		printf("socket connected\n");
 		return;
 	}
 
-	while (events & SCTP_EVENT_READ && !done && connected) {
-		struct sctp_recvv_rn rn;
+	while (events & USR_SCTP_EVENT_READ && !done && connected) {
+		struct usrsctp_recvv_rn rn;
 		ssize_t n;
 		struct sockaddr_in addr;
 		char *buf = calloc(1, BUFFERSIZE);
 		int flags = 0;
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
 		unsigned int infotype = 0;
-		socklen_t infolen = sizeof(struct sctp_recvv_rn);
-		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		socklen_t infolen = sizeof(struct usrsctp_recvv_rn);
+		memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 					 &infolen, &infotype, &flags);
 
@@ -136,7 +136,7 @@ main(int argc, char *argv[])
 	struct sockaddr *addr, *addrs;
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
-	struct sctp_udpencaps encaps;
+	struct usrsctp_udpencaps encaps;
 	struct sctpstat stat;
 	char buffer[200];
 	int i, n;
@@ -174,10 +174,10 @@ main(int argc, char *argv[])
 		}
 	}
 	if (argc > 5) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[5]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 			usrsctp_close(sock);
 			exit(1);
@@ -308,7 +308,7 @@ main(int argc, char *argv[])
 	while (!done && !input_done) {
 		if (inputAvailable()) {
 			if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-				usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+				usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, USR_SCTP_SENDV_NOINFO, 0);
 			} else {
 				if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
 					perror("usrsctp_shutdown");

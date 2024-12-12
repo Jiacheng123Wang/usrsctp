@@ -119,11 +119,11 @@ conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	if (data) {
-		if (flags & MSG_NOTIFICATION) {
-			handle_notification((union sctp_notification *)data, datalen);
+		if (flags & USR_MSG_NOTIFICATION) {
+			handle_notification((union usrsctp_notification *)data, datalen);
 		} else {
 			printf("Msg of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)datalen,
@@ -148,10 +148,10 @@ main(int argc, char *argv[])
 {
 	struct sockaddr_in sin;
 	struct sockaddr_conn sconn;
-	struct sctp_event event;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
-	                          SCTP_PEER_ADDR_CHANGE,
-	                          SCTP_SEND_FAILED_EVENT};
+	struct usrsctp_event event;
+	uint16_t event_types[] = {USR_SCTP_ASSOC_CHANGE,
+	                          USR_SCTP_PEER_ADDR_CHANGE,
+	                          USR_SCTP_SEND_FAILED_EVENT};
 	unsigned int i;
 #ifdef _WIN32
 	SOCKET fd;
@@ -164,7 +164,7 @@ main(int argc, char *argv[])
 #else
 	pthread_t tid;
 #endif
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 	char line[LINE_LENGTH];
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -260,12 +260,12 @@ main(int argc, char *argv[])
 		perror("usrsctp_set_non_blocking");
 	}
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_assoc_id = USR_SCTP_ALL_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
-		if (usrsctp_setsockopt(s, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT");
+		if (usrsctp_setsockopt(s, IPPROTO_SCTP, USR_SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt USR_SCTP_EVENT");
 		}
 	}
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -312,7 +312,7 @@ main(int argc, char *argv[])
 		sndinfo.snd_context = 0;
 		sndinfo.snd_assoc_id = 0;
 		if (usrsctp_sendv(s, line, strlen(line), NULL, 0, (void *)&sndinfo,
-		                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+		                  (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
 		}
 	}

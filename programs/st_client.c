@@ -137,7 +137,7 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 static void
 on_connect(struct socket* s)
 {
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
 	int bufferlen;
 
@@ -153,7 +153,7 @@ on_connect(struct socket* s)
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
 	if (usrsctp_sendv(s, buffer, bufferlen, NULL, 0, (void *)&sndinfo,
-	                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+	                  (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
 }
@@ -163,7 +163,7 @@ on_socket_readable(struct socket* s) {
 	char buffer[BUFFER_SIZE];
 	union sctp_sockstore addr;
 	socklen_t fromlen = sizeof(addr);
-	struct sctp_rcvinfo rcv_info;
+	struct usrsctp_rcvinfo rcv_info;
 	socklen_t infolen = sizeof(rcv_info);
 	unsigned int infotype = 0;
 	int flags = 0;
@@ -186,7 +186,7 @@ on_socket_readable(struct socket* s) {
 			return;
 		}
 
-		if (flags & MSG_NOTIFICATION) {
+		if (flags & USR_MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)retval);
 		} else {
 			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
@@ -208,10 +208,10 @@ handle_upcall(struct socket *s, void *arg, int flags)
 	int events = usrsctp_get_events(s);
 
 	if (connecting) {
-		if (events & SCTP_EVENT_ERROR) {
+		if (events & USR_SCTP_EVENT_ERROR) {
 			connecting = 0;
 			finish = 1;
-		} else if (events & SCTP_EVENT_WRITE) {
+		} else if (events & USR_SCTP_EVENT_WRITE) {
 			connecting = 0;
 			on_connect(s);
 		}
@@ -219,7 +219,7 @@ handle_upcall(struct socket *s, void *arg, int flags)
 		return;
 	}
 
-	if (events & SCTP_EVENT_READ) {
+	if (events & USR_SCTP_EVENT_READ) {
 		on_socket_readable(s);
 	}
 }
@@ -350,7 +350,7 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	usrsctp_setsockopt(s, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int));
+	usrsctp_setsockopt(s, IPPROTO_SCTP, USR_SCTP_RECVRCVINFO, &on, sizeof(int));
 	usrsctp_set_non_blocking(s, 1);
 	usrsctp_set_upcall(s, handle_upcall, NULL);
 

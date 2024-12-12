@@ -60,7 +60,7 @@ handle_accept(struct socket *sock, void *data, int flags)
 	char buffer[80];
 	time_t now;
 	socklen_t addr_len = 0;
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 
 	if (((conn_sock = usrsctp_accept(sock, NULL, &addr_len)) == NULL)
 	    && (errno != EINPROGRESS)) {
@@ -81,7 +81,7 @@ handle_accept(struct socket *sock, void *data, int flags)
 		sndinfo.snd_context = 0;
 		sndinfo.snd_assoc_id = 0;
 		usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo,
-		              (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0);
+		              (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0);
 		usrsctp_close(conn_sock);
 }
 
@@ -90,7 +90,7 @@ main(int argc, char *argv[])
 {
 	struct socket *sock;
 	struct sockaddr_in addr;
-	struct sctp_udpencaps encaps;
+	struct usrsctp_udpencaps encaps;
 
 	if (argc > 1) {
 		usrsctp_init(atoi(argv[1]), NULL, debug_printf_stack);
@@ -108,10 +108,10 @@ main(int argc, char *argv[])
 	}
 	usrsctp_set_non_blocking(sock, 1);
 	if (argc > 2) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;
 		encaps.sue_port = htons(atoi(argv[2]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 	}

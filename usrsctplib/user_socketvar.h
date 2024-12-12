@@ -46,8 +46,8 @@
 #include <sys/uio.h>
 #endif
 #define SOCK_MAXADDRLEN 255
-#if !defined(MSG_NOTIFICATION)
-#define MSG_NOTIFICATION 0x2000         /* SCTP notification */
+#if !defined(USR_MSG_NOTIFICATION)
+#define USR_MSG_NOTIFICATION 0x2000         /* SCTP notification */
 #endif
 #define SCTP_SO_LINGER     0x0001
 #define SCTP_SO_ACCEPTCONN 0x0002
@@ -369,9 +369,9 @@ extern userland_cond_t accept_cond;
 /*
  * Socket event flags
  */
-#define SCTP_EVENT_READ		0x0001	/* socket is readable */
-#define SCTP_EVENT_WRITE	0x0002	/* socket is writeable */
-#define SCTP_EVENT_ERROR	0x0004	/* socket has an error state */
+#define USR_SCTP_EVENT_READ		0x0001	/* socket is readable */
+#define USR_SCTP_EVENT_WRITE	0x0002	/* socket is writeable */
+#define USR_SCTP_EVENT_ERROR	0x0004	/* socket has an error state */
 
 
 /*-------------------------------------------------------------*/

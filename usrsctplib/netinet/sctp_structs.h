@@ -145,7 +145,7 @@ struct sctp_nonpad_sndrcvinfo {
 	uint32_t sinfo_timetolive;
 	uint32_t sinfo_tsn;
 	uint32_t sinfo_cumtsn;
-	sctp_assoc_t sinfo_assoc_id;
+	usrsctp_assoc_t sinfo_assoc_id;
 	uint16_t sinfo_keynumber;
 	uint16_t sinfo_keynumber_valid;
 };
@@ -473,9 +473,9 @@ struct sctp_data_chunkrec {
 TAILQ_HEAD(sctpchunk_listhead, sctp_tmit_chunk);
 
 /* The lower byte is used to enumerate PR_SCTP policies */
-#define CHUNK_FLAGS_PR_SCTP_TTL	        SCTP_PR_SCTP_TTL
-#define CHUNK_FLAGS_PR_SCTP_BUF	        SCTP_PR_SCTP_BUF
-#define CHUNK_FLAGS_PR_SCTP_RTX         SCTP_PR_SCTP_RTX
+#define CHUNK_FLAGS_PR_SCTP_TTL	        USR_SCTP_PR_SCTP_TTL
+#define CHUNK_FLAGS_PR_SCTP_BUF	        USR_SCTP_PR_SCTP_BUF
+#define CHUNK_FLAGS_PR_SCTP_RTX         USR_SCTP_PR_SCTP_RTX
 
 /* The upper byte is used as a bit mask */
 #define CHUNK_FLAGS_FRAGMENT_OK	        0x0100
@@ -514,14 +514,14 @@ struct sctp_tmit_chunk {
 
 struct sctp_queued_to_read {	/* sinfo structure Pluse more */
 	uint16_t sinfo_stream;	/* off the wire */
-	uint16_t sinfo_flags;	/* SCTP_UNORDERED from wire use SCTP_EOF for
+	uint16_t sinfo_flags;	/* USR_SCTP_UNORDERED from wire use USR_SCTP_EOF for
 				 * EOR */
 	uint32_t sinfo_ppid;	/* off the wire */
 	uint32_t sinfo_context;	/* pick this up from assoc def context? */
 	uint32_t sinfo_timetolive;	/* not used by kernel */
 	uint32_t sinfo_tsn;	/* Use this in reassembly as first TSN */
 	uint32_t sinfo_cumtsn;	/* Use this in reassembly as last TSN */
-	sctp_assoc_t sinfo_assoc_id;	/* our assoc id */
+	usrsctp_assoc_t sinfo_assoc_id;	/* our assoc id */
 	/* Non sinfo stuff */
 	uint32_t mid;		/* Fragment Index */
 	uint32_t length;	/* length of data */

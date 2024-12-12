@@ -673,10 +673,10 @@ int
 usrsctp_getsockopt(struct socket *so, int level, int option_name,
                    void *option_value, socklen_t *option_len);
 
-sctp_assoc_t
+usrsctp_assoc_t
 usrsctp_getassocid(struct socket *sock, struct sockaddr *sa)
 {
-	struct sctp_paddrinfo sp;
+	struct usrsctp_paddrinfo sp;
 	socklen_t siz;
 #ifndef HAVE_SA_LEN
 	size_t sa_len;
@@ -708,9 +708,9 @@ usrsctp_getassocid(struct socket *sock, struct sockaddr *sa)
 	}
 	memcpy((caddr_t)&sp.spinfo_address, sa, sa_len);
 #endif
-	if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_GET_PEER_ADDR_INFO, &sp, &siz) != 0) {
+	if (usrsctp_getsockopt(sock, IPPROTO_SCTP, USR_SCTP_GET_PEER_ADDR_INFO, &sp, &siz) != 0) {
 		/* We depend on the fact that 0 can never be returned */
-		return ((sctp_assoc_t) 0);
+		return ((usrsctp_assoc_t) 0);
 	}
 	return (sp.spinfo_assoc_id);
 }
@@ -800,7 +800,7 @@ usrsctp_sendv(struct socket *so,
 	struct uio auio;
 	struct iovec iov[1];
 	int use_sinfo;
-	sctp_assoc_t *assoc_id;
+	usrsctp_assoc_t *assoc_id;
 
 	if (so == NULL) {
 		errno = EBADF;
@@ -814,59 +814,59 @@ usrsctp_sendv(struct socket *so,
 	assoc_id = NULL;
 	use_sinfo = 0;
 	switch (infotype) {
-	case SCTP_SENDV_NOINFO:
+	case USR_SCTP_SENDV_NOINFO:
 		if ((infolen != 0) || (info != NULL)) {
 			errno = EINVAL;
 			return (-1);
 		}
 		break;
-	case SCTP_SENDV_SNDINFO:
-		if ((info == NULL) || (infolen != sizeof(struct sctp_sndinfo))) {
+	case USR_SCTP_SENDV_SNDINFO:
+		if ((info == NULL) || (infolen != sizeof(struct usrsctp_sndinfo))) {
 			errno = EINVAL;
 			return (-1);
 		}
-		sinfo.sinfo_stream = ((struct sctp_sndinfo *)info)->snd_sid;
-		sinfo.sinfo_flags = ((struct sctp_sndinfo *)info)->snd_flags;
-		sinfo.sinfo_ppid = ((struct sctp_sndinfo *)info)->snd_ppid;
-		sinfo.sinfo_context = ((struct sctp_sndinfo *)info)->snd_context;
-		sinfo.sinfo_assoc_id = ((struct sctp_sndinfo *)info)->snd_assoc_id;
-		assoc_id = &(((struct sctp_sndinfo *)info)->snd_assoc_id);
+		sinfo.sinfo_stream = ((struct usrsctp_sndinfo *)info)->snd_sid;
+		sinfo.sinfo_flags = ((struct usrsctp_sndinfo *)info)->snd_flags;
+		sinfo.sinfo_ppid = ((struct usrsctp_sndinfo *)info)->snd_ppid;
+		sinfo.sinfo_context = ((struct usrsctp_sndinfo *)info)->snd_context;
+		sinfo.sinfo_assoc_id = ((struct usrsctp_sndinfo *)info)->snd_assoc_id;
+		assoc_id = &(((struct usrsctp_sndinfo *)info)->snd_assoc_id);
 		use_sinfo = 1;
 		break;
-	case SCTP_SENDV_PRINFO:
-		if ((info == NULL) || (infolen != sizeof(struct sctp_prinfo))) {
+	case USR_SCTP_SENDV_PRINFO:
+		if ((info == NULL) || (infolen != sizeof(struct usrsctp_prinfo))) {
 			errno = EINVAL;
 			return (-1);
 		}
 		sinfo.sinfo_stream = 0;
-		sinfo.sinfo_flags = PR_SCTP_POLICY(((struct sctp_prinfo *)info)->pr_policy);
-		sinfo.sinfo_timetolive = ((struct sctp_prinfo *)info)->pr_value;
+		sinfo.sinfo_flags = PR_SCTP_POLICY(((struct usrsctp_prinfo *)info)->pr_policy);
+		sinfo.sinfo_timetolive = ((struct usrsctp_prinfo *)info)->pr_value;
 		use_sinfo = 1;
 		break;
-	case SCTP_SENDV_AUTHINFO:
+	case USR_SCTP_SENDV_AUTHINFO:
 		errno = EINVAL;
 		return (-1);
-	case SCTP_SENDV_SPA:
-		if ((info == NULL) || (infolen != sizeof(struct sctp_sendv_spa))) {
+	case USR_SCTP_SENDV_SPA:
+		if ((info == NULL) || (infolen != sizeof(struct usrsctp_sendv_spa))) {
 			errno = EINVAL;
 			return (-1);
 		}
-		if (((struct sctp_sendv_spa *)info)->sendv_flags & SCTP_SEND_SNDINFO_VALID) {
-			sinfo.sinfo_stream = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_sid;
-			sinfo.sinfo_flags = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_flags;
-			sinfo.sinfo_ppid = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_ppid;
-			sinfo.sinfo_context = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_context;
-			sinfo.sinfo_assoc_id = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id;
-			assoc_id = &(((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id);
+		if (((struct usrsctp_sendv_spa *)info)->sendv_flags & USR_SCTP_SEND_SNDINFO_VALID) {
+			sinfo.sinfo_stream = ((struct usrsctp_sendv_spa *)info)->sendv_sndinfo.snd_sid;
+			sinfo.sinfo_flags = ((struct usrsctp_sendv_spa *)info)->sendv_sndinfo.snd_flags;
+			sinfo.sinfo_ppid = ((struct usrsctp_sendv_spa *)info)->sendv_sndinfo.snd_ppid;
+			sinfo.sinfo_context = ((struct usrsctp_sendv_spa *)info)->sendv_sndinfo.snd_context;
+			sinfo.sinfo_assoc_id = ((struct usrsctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id;
+			assoc_id = &(((struct usrsctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id);
 		} else {
 			sinfo.sinfo_flags = 0;
 			sinfo.sinfo_stream = 0;
 		}
-		if (((struct sctp_sendv_spa *)info)->sendv_flags & SCTP_SEND_PRINFO_VALID) {
-			sinfo.sinfo_flags |= PR_SCTP_POLICY(((struct sctp_sendv_spa *)info)->sendv_prinfo.pr_policy);
-			sinfo.sinfo_timetolive = ((struct sctp_sendv_spa *)info)->sendv_prinfo.pr_value;
+		if (((struct usrsctp_sendv_spa *)info)->sendv_flags & USR_SCTP_SEND_PRINFO_VALID) {
+			sinfo.sinfo_flags |= PR_SCTP_POLICY(((struct usrsctp_sendv_spa *)info)->sendv_prinfo.pr_policy);
+			sinfo.sinfo_timetolive = ((struct usrsctp_sendv_spa *)info)->sendv_prinfo.pr_value;
 		}
-		if (((struct sctp_sendv_spa *)info)->sendv_flags & SCTP_SEND_AUTHINFO_VALID) {
+		if (((struct usrsctp_sendv_spa *)info)->sendv_flags & USR_SCTP_SEND_AUTHINFO_VALID) {
 			errno = EINVAL;
 			return (-1);
 		}
@@ -1077,8 +1077,8 @@ usrsctp_recvv(struct socket *so,
 	ssize_t ulen;
 	int i;
 	socklen_t fromlen;
-	struct sctp_rcvinfo *rcv;
-	struct sctp_recvv_rn *rn;
+	struct usrsctp_rcvinfo *rcv;
+	struct usrsctp_recvv_rn *rn;
 	struct sctp_extrcvinfo seinfo;
 
 	if (so == NULL) {
@@ -1123,15 +1123,15 @@ usrsctp_recvv(struct socket *so,
 	if (errno != 0) {
 		goto out;
 	}
-	if ((*msg_flags & MSG_NOTIFICATION) == 0) {
+	if ((*msg_flags & USR_MSG_NOTIFICATION) == 0) {
 		struct sctp_inpcb *inp;
 
 		inp = (struct sctp_inpcb *)so->so_pcb;
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO) &&
 		    sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO) &&
-		    *infolen >= (socklen_t)sizeof(struct sctp_recvv_rn) &&
-		    seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_AVAIL) {
-			rn = (struct sctp_recvv_rn *)info;
+		    *infolen >= (socklen_t)sizeof(struct usrsctp_recvv_rn) &&
+		    seinfo.sreinfo_next_flags & USR_SCTP_NEXT_MSG_AVAIL) {
+			rn = (struct usrsctp_recvv_rn *)info;
 			rn->recvv_rcvinfo.rcv_sid = seinfo.sinfo_stream;
 			rn->recvv_rcvinfo.rcv_ssn = seinfo.sinfo_ssn;
 			rn->recvv_rcvinfo.rcv_flags = seinfo.sinfo_flags;
@@ -1142,23 +1142,23 @@ usrsctp_recvv(struct socket *so,
 			rn->recvv_rcvinfo.rcv_assoc_id = seinfo.sinfo_assoc_id;
 			rn->recvv_nxtinfo.nxt_sid = seinfo.sreinfo_next_stream;
 			rn->recvv_nxtinfo.nxt_flags = 0;
-			if (seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_IS_UNORDERED) {
-				rn->recvv_nxtinfo.nxt_flags |= SCTP_UNORDERED;
+			if (seinfo.sreinfo_next_flags & USR_SCTP_NEXT_MSG_IS_UNORDERED) {
+				rn->recvv_nxtinfo.nxt_flags |= USR_SCTP_UNORDERED;
 			}
-			if (seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_IS_NOTIFICATION) {
-				rn->recvv_nxtinfo.nxt_flags |= SCTP_NOTIFICATION;
+			if (seinfo.sreinfo_next_flags & USR_SCTP_NEXT_MSG_IS_NOTIFICATION) {
+				rn->recvv_nxtinfo.nxt_flags |= USR_SCTP_NOTIFICATION;
 			}
-			if (seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_ISCOMPLETE) {
-				rn->recvv_nxtinfo.nxt_flags |= SCTP_COMPLETE;
+			if (seinfo.sreinfo_next_flags & USR_SCTP_NEXT_MSG_ISCOMPLETE) {
+				rn->recvv_nxtinfo.nxt_flags |= USR_SCTP_COMPLETE;
 			}
 			rn->recvv_nxtinfo.nxt_ppid = seinfo.sreinfo_next_ppid;
 			rn->recvv_nxtinfo.nxt_length = seinfo.sreinfo_next_length;
 			rn->recvv_nxtinfo.nxt_assoc_id = seinfo.sreinfo_next_aid;
-			*infolen = (socklen_t)sizeof(struct sctp_recvv_rn);
-			*infotype = SCTP_RECVV_RN;
+			*infolen = (socklen_t)sizeof(struct usrsctp_recvv_rn);
+			*infotype = USR_SCTP_RECVV_RN;
 		} else if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO) &&
-		           *infolen >= (socklen_t)sizeof(struct sctp_rcvinfo)) {
-			rcv = (struct sctp_rcvinfo *)info;
+		           *infolen >= (socklen_t)sizeof(struct usrsctp_rcvinfo)) {
+			rcv = (struct usrsctp_rcvinfo *)info;
 			rcv->rcv_sid = seinfo.sinfo_stream;
 			rcv->rcv_ssn = seinfo.sinfo_ssn;
 			rcv->rcv_flags = seinfo.sinfo_flags;
@@ -1167,10 +1167,10 @@ usrsctp_recvv(struct socket *so,
 			rcv->rcv_tsn = seinfo.sinfo_tsn;
 			rcv->rcv_cumtsn = seinfo.sinfo_cumtsn;
 			rcv->rcv_assoc_id = seinfo.sinfo_assoc_id;
-			*infolen = (socklen_t)sizeof(struct sctp_rcvinfo);
-			*infotype = SCTP_RECVV_RCVINFO;
+			*infolen = (socklen_t)sizeof(struct usrsctp_rcvinfo);
+			*infotype = USR_SCTP_RECVV_RCVINFO;
 		} else {
-			*infotype = SCTP_RECVV_NOINFO;
+			*infotype = USR_SCTP_RECVV_NOINFO;
 			*infolen = 0;
 		}
 	}
@@ -1308,7 +1308,7 @@ userspace_socket(int domain, int type, int protocol)
 struct socket *
 usrsctp_socket(int domain, int type, int protocol,
 	       int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
+                                 size_t datalen, struct usrsctp_rcvinfo, int flags, void *ulp_info),
 	       int (*send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info),
 	       uint32_t sb_threshold,
 	       void *ulp_info)
@@ -1774,7 +1774,7 @@ userspace_accept(struct socket *so, struct sockaddr *aname, socklen_t *anamelen)
 }
 
 struct socket *
-usrsctp_peeloff(struct socket *head, sctp_assoc_t id)
+usrsctp_peeloff(struct socket *head, usrsctp_assoc_t id)
 {
 	struct socket *so;
 
@@ -2275,113 +2275,113 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 }
 
 int
-usrsctp_opt_info(struct socket *so, sctp_assoc_t id, int opt, void *arg, socklen_t *size)
+usrsctp_opt_info(struct socket *so, usrsctp_assoc_t id, int opt, void *arg, socklen_t *size)
 {
 	if (arg == NULL) {
 		errno = EINVAL;
 		return (-1);
 	}
-	if ((id == SCTP_CURRENT_ASSOC) ||
-	    (id == SCTP_ALL_ASSOC)) {
+	if ((id == USR_SCTP_CURRENT_ASSOC) ||
+	    (id == USR_SCTP_ALL_ASSOC)) {
 		errno = EINVAL;
 		return (-1);
 	}
 	switch (opt) {
-	case SCTP_RTOINFO:
-		((struct sctp_rtoinfo *)arg)->srto_assoc_id = id;
+	case USR_SCTP_RTOINFO:
+		((struct usrsctp_rtoinfo *)arg)->srto_assoc_id = id;
 		break;
-	case SCTP_ASSOCINFO:
-		((struct sctp_assocparams *)arg)->sasoc_assoc_id = id;
+	case USR_SCTP_ASSOCINFO:
+		((struct usrsctp_assocparams *)arg)->sasoc_assoc_id = id;
 		break;
 	case SCTP_DEFAULT_SEND_PARAM:
-		((struct sctp_assocparams *)arg)->sasoc_assoc_id = id;
+		((struct usrsctp_assocparams *)arg)->sasoc_assoc_id = id;
 		break;
-	case SCTP_PRIMARY_ADDR:
-		((struct sctp_setprim *)arg)->ssp_assoc_id = id;
+	case USR_SCTP_PRIMARY_ADDR:
+		((struct usrsctp_setprim *)arg)->ssp_assoc_id = id;
 		break;
-	case SCTP_PEER_ADDR_PARAMS:
-		((struct sctp_paddrparams *)arg)->spp_assoc_id = id;
+	case USR_SCTP_PEER_ADDR_PARAMS:
+		((struct usrsctp_paddrparams *)arg)->spp_assoc_id = id;
 		break;
-	case SCTP_MAXSEG:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_MAXSEG:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_AUTH_KEY:
-		((struct sctp_authkey *)arg)->sca_assoc_id = id;
+	case USR_SCTP_AUTH_KEY:
+		((struct usrsctp_authkey *)arg)->sca_assoc_id = id;
 		break;
-	case SCTP_AUTH_ACTIVE_KEY:
-		((struct sctp_authkeyid *)arg)->scact_assoc_id = id;
+	case USR_SCTP_AUTH_ACTIVE_KEY:
+		((struct usrsctp_authkeyid *)arg)->scact_assoc_id = id;
 		break;
-	case SCTP_DELAYED_SACK:
-		((struct sctp_sack_info *)arg)->sack_assoc_id = id;
+	case USR_SCTP_DELAYED_SACK:
+		((struct usrsctp_sack_info *)arg)->sack_assoc_id = id;
 		break;
-	case SCTP_CONTEXT:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_CONTEXT:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_STATUS:
-		((struct sctp_status *)arg)->sstat_assoc_id = id;
+	case USR_SCTP_STATUS:
+		((struct usrsctp_status *)arg)->sstat_assoc_id = id;
 		break;
-	case SCTP_GET_PEER_ADDR_INFO:
-		((struct sctp_paddrinfo *)arg)->spinfo_assoc_id = id;
+	case USR_SCTP_GET_PEER_ADDR_INFO:
+		((struct usrsctp_paddrinfo *)arg)->spinfo_assoc_id = id;
 		break;
-	case SCTP_PEER_AUTH_CHUNKS:
-		((struct sctp_authchunks *)arg)->gauth_assoc_id = id;
+	case USR_SCTP_PEER_AUTH_CHUNKS:
+		((struct usrsctp_authchunks *)arg)->gauth_assoc_id = id;
 		break;
-	case SCTP_LOCAL_AUTH_CHUNKS:
-		((struct sctp_authchunks *)arg)->gauth_assoc_id = id;
+	case USR_SCTP_LOCAL_AUTH_CHUNKS:
+		((struct usrsctp_authchunks *)arg)->gauth_assoc_id = id;
 		break;
-	case SCTP_TIMEOUTS:
+	case USR_SCTP_TIMEOUTS:
 		((struct sctp_timeouts *)arg)->stimo_assoc_id = id;
 		break;
-	case SCTP_EVENT:
-		((struct sctp_event *)arg)->se_assoc_id = id;
+	case USR_SCTP_EVENT:
+		((struct usrsctp_event *)arg)->se_assoc_id = id;
 		break;
-	case SCTP_DEFAULT_SNDINFO:
-		((struct sctp_sndinfo *)arg)->snd_assoc_id = id;
+	case USR_SCTP_DEFAULT_SNDINFO:
+		((struct usrsctp_sndinfo *)arg)->snd_assoc_id = id;
 		break;
-	case SCTP_DEFAULT_PRINFO:
-		((struct sctp_default_prinfo *)arg)->pr_assoc_id = id;
+	case USR_SCTP_DEFAULT_PRINFO:
+		((struct usrsctp_default_prinfo *)arg)->pr_assoc_id = id;
 		break;
 	case SCTP_PEER_ADDR_THLDS:
 		((struct sctp_paddrthlds *)arg)->spt_assoc_id = id;
 		break;
-	case SCTP_REMOTE_UDP_ENCAPS_PORT:
-		((struct sctp_udpencaps *)arg)->sue_assoc_id = id;
+	case USR_SCTP_REMOTE_UDP_ENCAPS_PORT:
+		((struct usrsctp_udpencaps *)arg)->sue_assoc_id = id;
 		break;
-	case SCTP_ECN_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_ECN_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_PR_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_PR_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_AUTH_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_AUTH_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_ASCONF_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_ASCONF_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_RECONFIG_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_RECONFIG_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_NRSACK_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_NRSACK_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_PKTDROP_SUPPORTED:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_PKTDROP_SUPPORTED:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_MAX_BURST:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_MAX_BURST:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
 	case SCTP_ENABLE_STREAM_RESET:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
-	case SCTP_PR_STREAM_STATUS:
-		((struct sctp_prstatus *)arg)->sprstat_assoc_id = id;
+	case USR_SCTP_PR_STREAM_STATUS:
+		((struct usrsctp_prstatus *)arg)->sprstat_assoc_id = id;
 		break;
-	case SCTP_PR_ASSOC_STATUS:
-		((struct sctp_prstatus *)arg)->sprstat_assoc_id = id;
+	case USR_SCTP_PR_ASSOC_STATUS:
+		((struct usrsctp_prstatus *)arg)->sprstat_assoc_id = id;
 		break;
-	case SCTP_MAX_CWND:
-		((struct sctp_assoc_value *)arg)->assoc_id = id;
+	case USR_SCTP_MAX_CWND:
+		((struct usrsctp_assoc_value *)arg)->assoc_id = id;
 		break;
 	default:
 		break;
@@ -2578,14 +2578,14 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 int
 usrsctp_connectx(struct socket *so,
                  const struct sockaddr *addrs, int addrcnt,
-                 sctp_assoc_t *id)
+                 usrsctp_assoc_t *id)
 {
 #if defined(INET) || defined(INET6)
 	char buf[SCTP_STACK_BUF_SIZE];
 	int i, ret, cnt, *aa;
 	char *cpto;
 	const struct sockaddr *at;
-	sctp_assoc_t *p_id;
+	usrsctp_assoc_t *p_id;
 	size_t len = sizeof(int);
 
 	/* validate the address count and list */
@@ -2665,7 +2665,7 @@ usrsctp_connectx(struct socket *so,
 	*aa = cnt;
 	ret = usrsctp_setsockopt(so, IPPROTO_SCTP, SCTP_CONNECT_X, (void *)buf, (socklen_t)len);
 	if ((ret == 0) && id) {
-		p_id = (sctp_assoc_t *)buf;
+		p_id = (usrsctp_assoc_t *)buf;
 		*id = *p_id;
 	}
 	return (ret);
@@ -2676,7 +2676,7 @@ usrsctp_connectx(struct socket *so,
 }
 
 int
-usrsctp_getpaddrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
+usrsctp_getpaddrs(struct socket *so, usrsctp_assoc_t id, struct sockaddr **raddrs)
 {
 	struct sctp_getaddresses *addrs;
 	struct sockaddr *sa;
@@ -2756,7 +2756,7 @@ usrsctp_freepaddrs(struct sockaddr *addrs)
 }
 
 int
-usrsctp_getladdrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
+usrsctp_getladdrs(struct socket *so, usrsctp_assoc_t id, struct sockaddr **raddrs)
 {
 	struct sctp_getaddresses *addrs;
 	struct sockaddr *sa;
@@ -3347,13 +3347,13 @@ usrsctp_get_events(struct socket *so)
 
 	SOCK_LOCK(so);
 	if (soreadable(so)) {
-		events |= SCTP_EVENT_READ;
+		events |= USR_SCTP_EVENT_READ;
 	}
 	if (sowriteable(so)) {
-		events |= SCTP_EVENT_WRITE;
+		events |= USR_SCTP_EVENT_WRITE;
 	}
 	if (so->so_error) {
-		events |= SCTP_EVENT_ERROR;
+		events |= USR_SCTP_EVENT_ERROR;
 	}
 	SOCK_UNLOCK(so);
 

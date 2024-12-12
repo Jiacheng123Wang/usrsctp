@@ -128,11 +128,11 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 
 	if (data) {
-		if (flags & MSG_NOTIFICATION) {
+		if (flags & USR_MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)datalen);
 		} else {
 			printf("Msg of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u.\n",
@@ -169,7 +169,7 @@ main(int argc, char *argv[])
 #else
 	pthread_t tid;
 #endif
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -289,7 +289,7 @@ main(int argc, char *argv[])
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
 	if (usrsctp_sendv(s, buffer, BUFFER_SIZE, NULL, 0, (void *)&sndinfo,
-	                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+	                  (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
 

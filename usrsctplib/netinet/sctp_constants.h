@@ -296,7 +296,7 @@ extern void getwintimeofday(struct timeval *tv);
  * SCTP_HMAC is the HMAC_ID to use
  * SCTP_SIGNATURE_SIZE is the digest length
  */
-#define SCTP_HMAC		SCTP_AUTH_HMAC_ID_SHA1
+#define SCTP_HMAC		USR_SCTP_AUTH_HMAC_ID_SHA1
 #define SCTP_SIGNATURE_SIZE	SCTP_AUTH_DIGEST_LEN_SHA1
 #define SCTP_SIGNATURE_ALOC_SIZE SCTP_SIGNATURE_SIZE
 
@@ -382,8 +382,8 @@ extern void getwintimeofday(struct timeval *tv);
 /* align to 32-bit sizes */
 #define SCTP_SIZE32(x)	((((x) + 3) >> 2) << 2)
 
-#define IS_SCTP_CONTROL(a) (((a)->chunk_type != SCTP_DATA) && ((a)->chunk_type != SCTP_IDATA))
-#define IS_SCTP_DATA(a) (((a)->chunk_type == SCTP_DATA) || ((a)->chunk_type == SCTP_IDATA))
+#define IS_SCTP_CONTROL(a) (((a)->chunk_type != USR_SCTP_DATA) && ((a)->chunk_type != SCTP_IDATA))
+#define IS_SCTP_DATA(a) (((a)->chunk_type == USR_SCTP_DATA) || ((a)->chunk_type == SCTP_IDATA))
 
 /* SCTP parameter types */
 /*************0x0000 series*************/

@@ -92,8 +92,8 @@ sctp_set_initial_cc_param(struct sctp_tcb *stcb, struct sctp_nets *net)
 			cwnd_in_mtu = assoc->max_burst;
 		net->cwnd = (net->mtu - sizeof(struct sctphdr)) * cwnd_in_mtu;
 	}
-	if ((stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV1) ||
-	    (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV2)) {
+	if ((stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV1) ||
+	    (stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV2)) {
 		/* In case of resource pooling initialize appropriately */
 		net->cwnd /= assoc->numnets;
 		if (net->cwnd < (net->mtu - sizeof(struct sctphdr))) {
@@ -125,8 +125,8 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 	t_ssthresh = 0;
 	t_cwnd = 0;
 	t_ucwnd_sbw = 0;
-	if ((asoc->sctp_cmt_on_off == SCTP_CMT_RPV1) ||
-	    (asoc->sctp_cmt_on_off == SCTP_CMT_RPV2)) {
+	if ((asoc->sctp_cmt_on_off == USR_SCTP_CMT_RPV1) ||
+	    (asoc->sctp_cmt_on_off == USR_SCTP_CMT_RPV2)) {
 		TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 			t_ssthresh += net->ssthresh;
 			t_cwnd += net->cwnd;
@@ -157,15 +157,15 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 				struct sctp_tmit_chunk *lchk;
 				int old_cwnd = net->cwnd;
 
-				if ((asoc->sctp_cmt_on_off == SCTP_CMT_RPV1) ||
-				    (asoc->sctp_cmt_on_off == SCTP_CMT_RPV2)) {
-					if (asoc->sctp_cmt_on_off == SCTP_CMT_RPV1) {
+				if ((asoc->sctp_cmt_on_off == USR_SCTP_CMT_RPV1) ||
+				    (asoc->sctp_cmt_on_off == USR_SCTP_CMT_RPV2)) {
+					if (asoc->sctp_cmt_on_off == USR_SCTP_CMT_RPV1) {
 						net->ssthresh = (uint32_t)(((uint64_t)4 *
 					                                    (uint64_t)net->mtu *
 					                                    (uint64_t)net->ssthresh) /
 						                           (uint64_t)t_ssthresh);
 					}
-					if (asoc->sctp_cmt_on_off == SCTP_CMT_RPV2) {
+					if (asoc->sctp_cmt_on_off == USR_SCTP_CMT_RPV2) {
 						uint32_t srtt;
 
 						srtt = net->lastsa;
@@ -777,9 +777,9 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 	t_ucwnd_sbw = 0;
 	t_path_mptcp = 0;
 	mptcp_like_alpha = 1;
-	if ((stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV1) ||
-	    (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV2) ||
-	    (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_MPTCP)) {
+	if ((stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV1) ||
+	    (stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV2) ||
+	    (stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_MPTCP)) {
 		max_path = 0;
 		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			t_ssthresh += net->ssthresh;
@@ -915,7 +915,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 					old_cwnd = net->cwnd;
 #endif
 					switch (asoc->sctp_cmt_on_off) {
-					case SCTP_CMT_RPV1:
+					case USR_SCTP_CMT_RPV1:
 						limit = (uint32_t)(((uint64_t)net->mtu *
 						                    (uint64_t)SCTP_BASE_SYSCTL(sctp_L2_abc_variable) *
 						                    (uint64_t)net->ssthresh) /
@@ -930,7 +930,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 							incr = 1;
 						}
 						break;
-					case SCTP_CMT_RPV2:
+					case USR_SCTP_CMT_RPV2:
 						/* lastsa>>3;  we don't need to divide ...*/
 						srtt = net->lastsa;
 						if (srtt == 0) {
@@ -952,7 +952,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 							incr = 1;
 						}
 						break;
-					case SCTP_CMT_MPTCP:
+					case USR_SCTP_CMT_MPTCP:
 						limit = (uint32_t)(((uint64_t)net->mtu *
 						                    mptcp_like_alpha *
 						                    (uint64_t)SCTP_BASE_SYSCTL(sctp_L2_abc_variable)) >>
@@ -1010,7 +1010,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 					old_cwnd = net->cwnd;
 #endif
 					switch (asoc->sctp_cmt_on_off) {
-					case SCTP_CMT_RPV1:
+					case USR_SCTP_CMT_RPV1:
 						incr = (uint32_t)(((uint64_t)net->mtu *
 						                   (uint64_t)net->ssthresh) /
 						                  (uint64_t)t_ssthresh);
@@ -1018,7 +1018,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 							incr = 1;
 						}
 						break;
-					case SCTP_CMT_RPV2:
+					case USR_SCTP_CMT_RPV2:
 						/* lastsa>>3;  we don't need to divide ... */
 						srtt = net->lastsa;
 						if (srtt == 0) {
@@ -1033,7 +1033,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 							incr = 1;
 						}
 						break;
-					case SCTP_CMT_MPTCP:
+					case USR_SCTP_CMT_MPTCP:
 						incr = (uint32_t)((mptcp_like_alpha *
 						                   (uint64_t) net->cwnd) >>
 						                  SHIFT_MPTCP_MULTI);
@@ -1107,8 +1107,8 @@ sctp_cwnd_update_after_timeout(struct sctp_tcb *stcb, struct sctp_nets *net)
 	/* MT FIXME: Don't compute this over and over again */
 	t_ssthresh = 0;
 	t_cwnd = 0;
-	if ((stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV1) ||
-	    (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV2)) {
+	if ((stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV1) ||
+	    (stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV2)) {
 		struct sctp_nets *lnet;
 		uint32_t srtt;
 
@@ -1128,7 +1128,7 @@ sctp_cwnd_update_after_timeout(struct sctp_tcb *stcb, struct sctp_nets *net)
 		if (t_ucwnd_sbw < 1) {
 			t_ucwnd_sbw = 1;
 		}
-		if (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV1) {
+		if (stcb->asoc.sctp_cmt_on_off == USR_SCTP_CMT_RPV1) {
 			net->ssthresh = (uint32_t)(((uint64_t)4 *
 			                            (uint64_t)net->mtu *
 			                            (uint64_t)net->ssthresh) /
@@ -1529,7 +1529,7 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 
 	if (setorget == 1) {
 		/* a set */
-		if (cc_opt->option == SCTP_CC_OPT_RTCC_SETMODE) {
+		if (cc_opt->option == USR_SCTP_CC_OPT_RTCC_SETMODE) {
 			if ((cc_opt->aid_value.assoc_value != 0) &&
 			    (cc_opt->aid_value.assoc_value != 1)) {
 				return (EINVAL);
@@ -1545,7 +1545,7 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				net->cc_mod.rtcc.use_dccc_ecn = cc_opt->aid_value.assoc_value;
 			}
-		} else if (cc_opt->option == SCTP_CC_OPT_STEADY_STEP) {
+		} else if (cc_opt->option == USR_SCTP_CC_OPT_STEADY_STEP) {
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				net->cc_mod.rtcc.steady_step = cc_opt->aid_value.assoc_value;
 			}
@@ -1554,7 +1554,7 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 		}
 	} else {
 		/* a get */
-		if (cc_opt->option == SCTP_CC_OPT_RTCC_SETMODE) {
+		if (cc_opt->option == USR_SCTP_CC_OPT_RTCC_SETMODE) {
 			net = TAILQ_FIRST(&stcb->asoc.nets);
 			if (net == NULL) {
 				return (EFAULT);
@@ -1566,7 +1566,7 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 				return (EFAULT);
 			}
 			cc_opt->aid_value.assoc_value = net->cc_mod.rtcc.use_dccc_ecn;
-		} else if (cc_opt->option == SCTP_CC_OPT_STEADY_STEP) {
+		} else if (cc_opt->option == USR_SCTP_CC_OPT_STEADY_STEP) {
 			net = TAILQ_FIRST(&stcb->asoc.nets);
 			if (net == NULL) {
 				return (EFAULT);

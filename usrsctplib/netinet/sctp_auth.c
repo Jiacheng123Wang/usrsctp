@@ -105,10 +105,10 @@ sctp_auth_add_chunk(uint8_t chunk, sctp_auth_chklist_t *list)
 		return (-1);
 
 	/* is chunk restricted? */
-	if ((chunk == SCTP_INITIATION) ||
-	    (chunk == SCTP_INITIATION_ACK) ||
-	    (chunk == SCTP_SHUTDOWN_COMPLETE) ||
-	    (chunk == SCTP_AUTHENTICATION)) {
+	if ((chunk == USR_SCTP_INITIATION) ||
+	    (chunk == USR_SCTP_INITIATION_ACK) ||
+	    (chunk == USR_SCTP_SHUTDOWN_COMPLETE) ||
+	    (chunk == USR_SCTP_AUTHENTICATION)) {
 		return (-1);
 	}
 	if (list->chunks[chunk] == 0) {
@@ -661,10 +661,10 @@ sctp_auth_add_hmacid(sctp_hmaclist_t *list, uint16_t hmac_id)
 		return (-1);
 	}
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
-	if ((hmac_id != SCTP_AUTH_HMAC_ID_SHA1) &&
-	    (hmac_id != SCTP_AUTH_HMAC_ID_SHA256)) {
+	if ((hmac_id != USR_SCTP_AUTH_HMAC_ID_SHA1) &&
+	    (hmac_id != USR_SCTP_AUTH_HMAC_ID_SHA256)) {
 #else
-	if (hmac_id != SCTP_AUTH_HMAC_ID_SHA1) {
+	if (hmac_id != USR_SCTP_AUTH_HMAC_ID_SHA1) {
 #endif
 		return (-1);
 	}
@@ -714,9 +714,9 @@ sctp_default_supported_hmaclist(void)
 		return (NULL);
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
 	/* We prefer SHA256, so list it first */
-	(void)sctp_auth_add_hmacid(new_list, SCTP_AUTH_HMAC_ID_SHA256);
+	(void)sctp_auth_add_hmacid(new_list, USR_SCTP_AUTH_HMAC_ID_SHA256);
 #endif
-	(void)sctp_auth_add_hmacid(new_list, SCTP_AUTH_HMAC_ID_SHA1);
+	(void)sctp_auth_add_hmacid(new_list, USR_SCTP_AUTH_HMAC_ID_SHA1);
 	return (new_list);
 }
 
@@ -730,7 +730,7 @@ sctp_negotiate_hmacid(sctp_hmaclist_t *peer, sctp_hmaclist_t *local)
 	int i, j;
 
 	if ((local == NULL) || (peer == NULL))
-		return (SCTP_AUTH_HMAC_ID_RSVD);
+		return (USR_SCTP_AUTH_HMAC_ID_RSVD);
 
 	for (i = 0; i < peer->num_algo; i++) {
 		for (j = 0; j < local->num_algo; j++) {
@@ -744,7 +744,7 @@ sctp_negotiate_hmacid(sctp_hmaclist_t *peer, sctp_hmaclist_t *local)
 		}
 	}
 	/* didn't find one! */
-	return (SCTP_AUTH_HMAC_ID_RSVD);
+	return (USR_SCTP_AUTH_HMAC_ID_RSVD);
 }
 
 /*-
@@ -774,7 +774,7 @@ sctp_verify_hmac_param (struct sctp_auth_hmac_algo *hmacs, uint32_t num_hmacs)
 	uint32_t i;
 
 	for (i = 0; i < num_hmacs; i++) {
-		if (ntohs(hmacs->hmac_ids[i]) == SCTP_AUTH_HMAC_ID_SHA1) {
+		if (ntohs(hmacs->hmac_ids[i]) == USR_SCTP_AUTH_HMAC_ID_SHA1) {
 			return (0);
 		}
 	}
@@ -829,10 +829,10 @@ uint32_t
 sctp_get_hmac_digest_len(uint16_t hmac_algo)
 {
 	switch (hmac_algo) {
-	case SCTP_AUTH_HMAC_ID_SHA1:
+	case USR_SCTP_AUTH_HMAC_ID_SHA1:
 		return (SCTP_AUTH_DIGEST_LEN_SHA1);
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
-	case SCTP_AUTH_HMAC_ID_SHA256:
+	case USR_SCTP_AUTH_HMAC_ID_SHA256:
 		return (SCTP_AUTH_DIGEST_LEN_SHA256);
 #endif
 	default:
@@ -845,13 +845,13 @@ static inline int
 sctp_get_hmac_block_len(uint16_t hmac_algo)
 {
 	switch (hmac_algo) {
-	case SCTP_AUTH_HMAC_ID_SHA1:
+	case USR_SCTP_AUTH_HMAC_ID_SHA1:
 		return (64);
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
-	case SCTP_AUTH_HMAC_ID_SHA256:
+	case USR_SCTP_AUTH_HMAC_ID_SHA256:
 		return (64);
 #endif
-	case SCTP_AUTH_HMAC_ID_RSVD:
+	case USR_SCTP_AUTH_HMAC_ID_RSVD:
 	default:
 		/* unknown HMAC algorithm: can't do anything */
 		return (0);
@@ -865,15 +865,15 @@ static void
 sctp_hmac_init(uint16_t hmac_algo, sctp_hash_context_t *ctx)
 {
 	switch (hmac_algo) {
-	case SCTP_AUTH_HMAC_ID_SHA1:
+	case USR_SCTP_AUTH_HMAC_ID_SHA1:
 		SCTP_SHA1_INIT(&ctx->sha1);
 		break;
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
-	case SCTP_AUTH_HMAC_ID_SHA256:
+	case USR_SCTP_AUTH_HMAC_ID_SHA256:
 		SCTP_SHA256_INIT(&ctx->sha256);
 		break;
 #endif
-	case SCTP_AUTH_HMAC_ID_RSVD:
+	case USR_SCTP_AUTH_HMAC_ID_RSVD:
 	default:
 		/* unknown HMAC algorithm: can't do anything */
 		return;
@@ -885,15 +885,15 @@ sctp_hmac_update(uint16_t hmac_algo, sctp_hash_context_t *ctx,
     uint8_t *text, uint32_t textlen)
 {
 	switch (hmac_algo) {
-	case SCTP_AUTH_HMAC_ID_SHA1:
+	case USR_SCTP_AUTH_HMAC_ID_SHA1:
 		SCTP_SHA1_UPDATE(&ctx->sha1, text, textlen);
 		break;
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
-	case SCTP_AUTH_HMAC_ID_SHA256:
+	case USR_SCTP_AUTH_HMAC_ID_SHA256:
 		SCTP_SHA256_UPDATE(&ctx->sha256, text, textlen);
 		break;
 #endif
-	case SCTP_AUTH_HMAC_ID_RSVD:
+	case USR_SCTP_AUTH_HMAC_ID_RSVD:
 	default:
 		/* unknown HMAC algorithm: can't do anything */
 		return;
@@ -905,15 +905,15 @@ sctp_hmac_final(uint16_t hmac_algo, sctp_hash_context_t *ctx,
     uint8_t *digest)
 {
 	switch (hmac_algo) {
-	case SCTP_AUTH_HMAC_ID_SHA1:
+	case USR_SCTP_AUTH_HMAC_ID_SHA1:
 		SCTP_SHA1_FINAL(digest, &ctx->sha1);
 		break;
 #if defined(SCTP_SUPPORT_HMAC_SHA256)
-	case SCTP_AUTH_HMAC_ID_SHA256:
+	case USR_SCTP_AUTH_HMAC_ID_SHA256:
 		SCTP_SHA256_FINAL(digest, &ctx->sha256);
 		break;
 #endif
-	case SCTP_AUTH_HMAC_ID_RSVD:
+	case USR_SCTP_AUTH_HMAC_ID_RSVD:
 	default:
 		/* unknown HMAC algorithm: can't do anything */
 		return;
@@ -1144,7 +1144,7 @@ sctp_auth_is_supported_hmac(sctp_hmaclist_t *list, uint16_t id)
 {
 	int i;
 
-	if ((list == NULL) || (id == SCTP_AUTH_HMAC_ID_RSVD))
+	if ((list == NULL) || (id == USR_SCTP_AUTH_HMAC_ID_RSVD))
 		return (0);
 
 	for (i = 0; i < list->num_algo; i++)
@@ -1728,7 +1728,7 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
                            uint16_t keyid, int so_locked)
 {
 	struct mbuf *m_notify;
-	struct sctp_authkey_event *auth;
+	struct usrsctp_authkey_event *auth;
 	struct sctp_queued_to_read *control;
 
 	KASSERT(stcb != NULL, ("stcb == NULL"));
@@ -1739,21 +1739,21 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 		/* event not enabled */
 		return;
 
-	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_authkey_event),
+	m_notify = sctp_get_mbuf_for_msg(sizeof(struct usrsctp_authkey_event),
 	                                 0, M_NOWAIT, 1, MT_HEADER);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
 
 	SCTP_BUF_LEN(m_notify) = 0;
-	auth = mtod(m_notify, struct sctp_authkey_event *);
-	memset(auth, 0, sizeof(struct sctp_authkey_event));
-	auth->auth_type = SCTP_AUTHENTICATION_EVENT;
+	auth = mtod(m_notify, struct usrsctp_authkey_event *);
+	memset(auth, 0, sizeof(struct usrsctp_authkey_event));
+	auth->auth_type = USR_SCTP_AUTHENTICATION_EVENT;
 	auth->auth_flags = 0;
 	auth->auth_length = sizeof(*auth);
 	auth->auth_keynumber = keyid;
 	/* XXXMT: The following is BSD specific. */
-	if (indication == SCTP_AUTH_NEW_KEY) {
+	if (indication == USR_SCTP_AUTH_NEW_KEY) {
 		auth->auth_altkeynumber = stcb->asoc.authinfo.recv_keyid;
 	} else {
 		auth->auth_altkeynumber = 0;
@@ -1828,8 +1828,8 @@ sctp_validate_init_auth_params(struct mbuf *m, int offset, int limit)
 			num_ent = plen - sizeof(struct sctp_paramhdr);
 			for (i = 0; i < num_ent; i++) {
 				switch (pr_supported->chunk_types[i]) {
-				case SCTP_ASCONF:
-				case SCTP_ASCONF_ACK:
+				case USR_SCTP_ASCONF:
+				case USR_SCTP_ASCONF_ACK:
 					peer_supports_asconf = 1;
 					break;
 				default:
@@ -1891,9 +1891,9 @@ sctp_validate_init_auth_params(struct mbuf *m, int offset, int limit)
 			num_chunks = plen - sizeof(*chunks);
 			for (i = 0; i < num_chunks; i++) {
 				/* record asconf/asconf-ack if listed */
-				if (chunks->chunk_types[i] == SCTP_ASCONF)
+				if (chunks->chunk_types[i] == USR_SCTP_ASCONF)
 					saw_asconf = 1;
-				if (chunks->chunk_types[i] == SCTP_ASCONF_ACK)
+				if (chunks->chunk_types[i] == USR_SCTP_ASCONF_ACK)
 					saw_asconf_ack = 1;
 			}
 			if (num_chunks)
@@ -2073,7 +2073,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 8;
 	strcpy(text, "Hi There");
 	digest = "\xb6\x17\x31\x86\x55\x05\x72\x64\xe2\x8b\xc0\xb6\xfb\x37\x8c\x8e\xf1\x46\xbe\x00";
-	if (sctp_test_hmac("SHA1 test case 1", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 1", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 
@@ -2090,7 +2090,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 28;
 	strcpy(text, "what do ya want for nothing?");
 	digest = "\xef\xfc\xdf\x6a\xe5\xeb\x2f\xa2\xd2\x74\x16\xd5\xf1\x84\xdf\x9c\x25\x9a\x7c\x79";
-	if (sctp_test_hmac("SHA1 test case 2", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 2", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 
@@ -2107,7 +2107,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 50;
 	memset(text, 0xdd, textlen);
 	digest = "\x12\x5d\x73\x42\xb9\xac\x11\xcd\x91\xa3\x9a\xf4\x8a\xa1\x7b\x4f\x63\xf1\x75\xd3";
-	if (sctp_test_hmac("SHA1 test case 3", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 3", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 
@@ -2124,7 +2124,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 50;
 	memset(text, 0xcd, textlen);
 	digest = "\x4c\x90\x07\xf4\x02\x62\x50\xc6\xbc\x84\x14\xf9\xbf\x50\xc8\x6c\x2d\x72\x35\xda";
-	if (sctp_test_hmac("SHA1 test case 4", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 4", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 
@@ -2142,7 +2142,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 20;
 	strcpy(text, "Test With Truncation");
 	digest = "\x4c\x1a\x03\x42\x4b\x55\xe0\x7f\xe7\xf2\x7b\xe1\xd5\x8b\xb9\x32\x4a\x9a\x5a\x04";
-	if (sctp_test_hmac("SHA1 test case 5", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 5", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 
@@ -2159,7 +2159,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 54;
 	strcpy(text, "Test Using Larger Than Block-Size Key - Hash Key First");
 	digest = "\xaa\x4a\xe5\xe1\x52\x72\xd0\x0e\x95\x70\x56\x37\xce\x8a\x3b\x55\xed\x40\x21\x12";
-	if (sctp_test_hmac("SHA1 test case 6", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 6", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 
@@ -2176,7 +2176,7 @@ sctp_test_hmac_sha1(void)
 	textlen = 73;
 	strcpy(text, "Test Using Larger Than Block-Size Key and Larger Than One Block-Size Data");
 	digest = "\xe8\xe9\x9d\x0f\x45\x23\x7d\x78\x6d\x6b\xba\xa7\x96\x5c\x78\x08\xbb\xff\x1a\x91";
-	if (sctp_test_hmac("SHA1 test case 7", SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
+	if (sctp_test_hmac("SHA1 test case 7", USR_SCTP_AUTH_HMAC_ID_SHA1, key, keylen,
 	    text, textlen, digest, digestlen) < 0)
 		failed++;
 

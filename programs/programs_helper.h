@@ -59,7 +59,7 @@ struct sctp_init_chunk {
 #undef SCTP_PACKED
 
 void
-handle_notification(union sctp_notification *notif, size_t n);
+handle_notification(union usrsctp_notification *notif, size_t n);
 #ifndef timersub
 #define timersub(tvp, uvp, vvp)                                   \
 	do {                                                      \

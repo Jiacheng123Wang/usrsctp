@@ -57,7 +57,7 @@ void
 sctp_log_trace(uint32_t fr, const char *str SCTP_UNUSED, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f);
 #endif
 
-#define sctp_get_associd(stcb) ((sctp_assoc_t)stcb->asoc.assoc_id)
+#define sctp_get_associd(stcb) ((usrsctp_assoc_t)stcb->asoc.assoc_id)
 
 /*
  * Function prototypes

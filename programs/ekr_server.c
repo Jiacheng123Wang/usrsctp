@@ -129,11 +129,11 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 
 static int
 receive_cb(struct socket *s, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 
 	if (data) {
-		if (flags & MSG_NOTIFICATION) {
+		if (flags & USR_MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)datalen);
 		} else {
 			printf("Msg of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u.\n",

@@ -100,23 +100,23 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 	fuzzer_printf("handle_upcall()\n");
 	int events = usrsctp_get_events(sock);
 
-	while (events & SCTP_EVENT_READ) {
-		struct sctp_recvv_rn rn;
+	while (events & USR_SCTP_EVENT_READ) {
+		struct usrsctp_recvv_rn rn;
 		ssize_t n;
 		struct sockaddr_in addr;
 		char *buf = calloc(1, BUFFER_SIZE);
 		int flags = 0;
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
 		unsigned int infotype = 0;
-		socklen_t infolen = sizeof(struct sctp_recvv_rn);
-		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		socklen_t infolen = sizeof(struct usrsctp_recvv_rn);
+		memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFER_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
 		fuzzer_printf("usrsctp_recvv() - returned %zd\n", n);
 
-		if (flags & MSG_NOTIFICATION) {
+		if (flags & USR_MSG_NOTIFICATION) {
 			fuzzer_printf("NOTIFICATION received\n");
 #ifdef FUZZ_VERBOSE
-			handle_notification((union sctp_notification *)buf, n);
+			handle_notification((union usrsctp_notification *)buf, n);
 #endif // FUZZ_VERBOSE
 		} else {
 			fuzzer_printf("DATA received\n");
@@ -164,29 +164,29 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
 	struct linger so_linger;
-	struct sctp_event event;
+	struct usrsctp_event event;
 	unsigned long i;
 	struct sctp_common_header* common_header;
 	uint16_t event_types[] = {
-		SCTP_ASSOC_CHANGE,
-		SCTP_PEER_ADDR_CHANGE,
-		SCTP_REMOTE_ERROR,
-		SCTP_SEND_FAILED,
-		SCTP_SHUTDOWN_EVENT,
-		SCTP_ADAPTATION_INDICATION,
-		SCTP_PARTIAL_DELIVERY_EVENT,
-		SCTP_AUTHENTICATION_EVENT,
-		SCTP_STREAM_RESET_EVENT,
-		SCTP_SENDER_DRY_EVENT,
-		SCTP_ASSOC_RESET_EVENT,
-		SCTP_STREAM_CHANGE_EVENT,
-		SCTP_SEND_FAILED_EVENT
+		USR_SCTP_ASSOC_CHANGE,
+		USR_SCTP_PEER_ADDR_CHANGE,
+		USR_SCTP_REMOTE_ERROR,
+		USR_SCTP_SEND_FAILED,
+		USR_SCTP_SHUTDOWN_EVENT,
+		USR_SCTP_ADAPTATION_INDICATION,
+		USR_SCTP_PARTIAL_DELIVERY_EVENT,
+		USR_SCTP_AUTHENTICATION_EVENT,
+		USR_SCTP_STREAM_RESET_EVENT,
+		USR_SCTP_SENDER_DRY_EVENT,
+		USR_SCTP_ASSOC_RESET_EVENT,
+		USR_SCTP_STREAM_CHANGE_EVENT,
+		USR_SCTP_SEND_FAILED_EVENT
 	};
 	int optval;
 	int result;
-	struct sctp_initmsg initmsg;
+	struct usrsctp_initmsg initmsg;
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
-	struct sctp_assoc_value assoc_val;
+	struct usrsctp_assoc_value assoc_val;
 #endif // defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 
 	// WITH COMMON HEADER!
@@ -281,8 +281,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	usrsctp_set_non_blocking(socket_client, 1);
 
 	// all max!
-	memset(&initmsg, 1, sizeof(struct sctp_initmsg));
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(struct sctp_initmsg));
+	memset(&initmsg, 1, sizeof(struct usrsctp_initmsg));
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_INITMSG, &initmsg, sizeof(struct usrsctp_initmsg));
 	FUZZER_ASSERT(result == 0);
 
 	so_linger.l_onoff = 1;
@@ -294,22 +294,22 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	event.se_on = 1;
 	for (i = 0; i < (sizeof(event_types) / sizeof(uint16_t)); i++) {
 		event.se_type = event_types[i];
-		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event));
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_EVENT, &event, sizeof(event));
 		FUZZER_ASSERT(result == 0);
 	}
 
 	optval = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &optval, sizeof(optval));
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_RECVRCVINFO, &optval, sizeof(optval));
 	FUZZER_ASSERT(result == 0);
 
 	optval = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &optval, sizeof(optval));
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_RECVNXTINFO, &optval, sizeof(optval));
 	FUZZER_ASSERT(result == 0);
 
 #if defined(FUZZ_STREAM_RESET)
-	assoc_val.assoc_id = SCTP_ALL_ASSOC;
-	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_RESET_ASSOC_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value));
+	assoc_val.assoc_id = USR_SCTP_ALL_ASSOC;
+	assoc_val.assoc_value = USR_SCTP_ENABLE_RESET_STREAM_REQ | USR_SCTP_ENABLE_RESET_ASSOC_REQ | USR_SCTP_ENABLE_CHANGE_ASSOC_REQ;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct usrsctp_assoc_value));
 	FUZZER_ASSERT(result == 0);
 #endif // defined(FUZZ_STREAM_RESET)
 
@@ -320,7 +320,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	if (data[0] & FUZZ_B_I_DATA_SUPPORT) {
 		optval = 2;
-		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
 		FUZZER_ASSERT(result == 0);
 
 		memset(&assoc_val, 0, sizeof(assoc_val));
@@ -331,7 +331,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #endif // defined(FUZZ_INTERLEAVING)
 
 	optval = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_REUSE_PORT, &optval, sizeof(optval));
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_REUSE_PORT, &optval, sizeof(optval));
 	FUZZER_ASSERT(result == 0);
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -347,7 +347,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	// Disable Nagle.
 	optval = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(optval));
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_NODELAY, &optval, sizeof(optval));
 	FUZZER_ASSERT(result == 0);
 
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
@@ -389,7 +389,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		data[0] & FUZZ_B_SEND_DATA) {
 		const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
 		fuzzer_printf("Calling usrsctp_sendv()\n");
-		usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, USR_SCTP_SENDV_NOINFO, 0);
 	}
 
 	// Required: INIT-ACK and COOKIE-ACK
@@ -398,10 +398,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		data[0] & FUZZ_B_SEND_STREAM_RESET) {
 		fuzzer_printf("Sending Stream Reset for all streams\n");
 
-		struct sctp_reset_streams srs;
-		memset(&srs, 0, sizeof(struct sctp_reset_streams));
-		srs.srs_flags = SCTP_STREAM_RESET_INCOMING | SCTP_STREAM_RESET_OUTGOING;
-		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RESET_STREAMS, &srs, sizeof(struct sctp_reset_streams));
+		struct usrsctp_reset_streams srs;
+		memset(&srs, 0, sizeof(struct usrsctp_reset_streams));
+		srs.srs_flags = USR_SCTP_STREAM_RESET_INCOMING | USR_SCTP_STREAM_RESET_OUTGOING;
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, USR_SCTP_RESET_STREAMS, &srs, sizeof(struct usrsctp_reset_streams));
 		FUZZER_ASSERT(result == 0);
 	}
 
@@ -429,7 +429,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		data[0] & FUZZ_B_SEND_DATA_FORCE) {
 			const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
 			fuzzer_printf("Calling usrsctp_sendv()\n");
-			usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+			usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, USR_SCTP_SENDV_NOINFO, 0);
 		}
 	
 

@@ -571,7 +571,7 @@ struct sctp_inpcb {
 #if defined(__Userspace__)
 	void *ulp_info;
 	int (*recv_callback)(struct socket *, union sctp_sockstore, void *, size_t,
-                             struct sctp_rcvinfo, int, void *);
+                             struct usrsctp_rcvinfo, int, void *);
 	uint32_t send_sb_threshold;
 	int (*send_callback)(struct socket *, uint32_t, void *);
 #endif
@@ -580,7 +580,7 @@ struct sctp_inpcb {
 #if defined(__Userspace__)
 int register_recv_cb (struct socket *,
                       int (*)(struct socket *, union sctp_sockstore, void *, size_t,
-                              struct sctp_rcvinfo, int, void *));
+                              struct usrsctp_rcvinfo, int, void *));
 int register_send_cb (struct socket *, uint32_t, int (*)(struct socket *, uint32_t, void *));
 int register_ulp_info (struct socket *, void *);
 int retrieve_ulp_info (struct socket *, void **);
@@ -747,11 +747,11 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **,
     struct sctp_tcb *);
 
 struct sctp_tcb *
-sctp_findasoc_ep_asocid_locked(struct sctp_inpcb *inp, sctp_assoc_t asoc_id, int want_lock);
+sctp_findasoc_ep_asocid_locked(struct sctp_inpcb *inp, usrsctp_assoc_t asoc_id, int want_lock);
 
 struct sctp_tcb *
 sctp_findassociation_ep_asocid(struct sctp_inpcb *,
-    sctp_assoc_t, int);
+    usrsctp_assoc_t, int);
 
 struct sctp_tcb *
 sctp_findassociation_ep_asconf(struct mbuf *, int, struct sockaddr *,

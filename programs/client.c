@@ -52,6 +52,7 @@
 #endif
 #include <usrsctp.h>
 #include "programs_helper.h"
+#include <netdb.h>
 
 int done = 0;
 
@@ -63,14 +64,14 @@ typedef char* caddr_t;
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	if (data == NULL) {
 		done = 1;
 		usrsctp_close(sock);
 	} else {
-		if (flags & MSG_NOTIFICATION) {
-			handle_notification((union sctp_notification *)data, datalen);
+		if (flags & USR_MSG_NOTIFICATION) {
+			handle_notification((union usrsctp_notification *)data, datalen);
 		} else {
 #ifdef _WIN32
 			_write(_fileno(stdout), data, (unsigned int)datalen);
@@ -92,15 +93,17 @@ main(int argc, char *argv[])
 	struct sockaddr *addr, *addrs;
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
-	struct sctp_udpencaps encaps;
+	struct usrsctp_udpencaps encaps;
 	struct sctpstat stat;
-	struct sctp_event event;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
-	                          SCTP_PEER_ADDR_CHANGE,
-	                          SCTP_SEND_FAILED_EVENT};
+	struct usrsctp_event event;
+	uint16_t event_types[] = {USR_SCTP_ASSOC_CHANGE,
+	                          USR_SCTP_PEER_ADDR_CHANGE,
+	                          USR_SCTP_SEND_FAILED_EVENT};
 	char buffer[80];
 	unsigned int i;
 	int n;
+
+	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
 
 	if (argc < 3) {
 		printf("%s", "Usage: client remote_addr remote_port local_port local_encaps_port remote_encaps_port\n");
@@ -117,18 +120,29 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_blackhole(2);
 	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
-	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_assoc_id = USR_SCTP_ALL_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT");
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt USR_SCTP_EVENT");
 		}
 	}
+	if ((n = usrsctp_getladdrs(sock, 0, &addrs)) < 0) {
+		perror("usrsctp_getladdrs");
+	} else{
+		if (getnameinfo(addrs, sizeof(struct sockaddr), hbuf, sizeof(hbuf), sbuf,
+					sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+			printf("============================ local: host=%s, serv=%s ====================\n", hbuf, sbuf);
+		}else{
+			printf("Error......\n");
+		}
+	}
+
 	if (argc > 3) {
 		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
@@ -140,12 +154,23 @@ main(int argc, char *argv[])
 		if (usrsctp_bind(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
 		}
+
+		if ((n = usrsctp_getladdrs(sock, 0, &addrs)) < 0) {
+			perror("usrsctp_getladdrs");
+		} else{
+			if (getnameinfo(addrs, sizeof(struct sockaddr), hbuf, sizeof(hbuf), sbuf,
+						sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+				printf("============================ local: host=%s, serv=%s ====================\n", hbuf, sbuf);
+			}else{
+				printf("Error......\n");
+			}
+		}
 	}
 	if (argc > 5) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[5]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 	}
@@ -175,6 +200,12 @@ main(int argc, char *argv[])
 	if ((n = usrsctp_getladdrs(sock, 0, &addrs)) < 0) {
 		perror("usrsctp_getladdrs");
 	} else {
+		if (getnameinfo(addrs, sizeof(struct sockaddr), hbuf, sizeof(hbuf), sbuf,
+					sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+			printf("============================ local: host=%s, serv=%s ====================\n", hbuf, sbuf);
+		}else{
+			printf("Error......\n");
+		}
 		addr = addrs;
 		printf("Local addresses: ");
 		for (i = 0; i < (unsigned int)n; i++) {
@@ -190,7 +221,7 @@ main(int argc, char *argv[])
 
 				sin = (struct sockaddr_in *)addr;
 				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-				printf("%s", name);
+				printf("%s:%d\n", name, htons(sin->sin_port));
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
 #endif
@@ -223,6 +254,13 @@ main(int argc, char *argv[])
 	if ((n = usrsctp_getpaddrs(sock, 0, &addrs)) < 0) {
 		perror("usrsctp_getpaddrs");
 	} else {
+		if (getnameinfo(addrs, sizeof(struct sockaddr), hbuf, sizeof(hbuf), sbuf,
+					sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+			printf("============================ remote: host=%s, serv=%s ====================\n", hbuf, sbuf);
+		}else{
+			printf("Error......\n");
+		}
+
 		addr = addrs;
 		printf("Peer addresses: ");
 		for (i = 0; i < (unsigned int)n; i++) {
@@ -269,7 +307,7 @@ main(int argc, char *argv[])
 		usrsctp_freepaddrs(addrs);
 	}
 	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
-		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, USR_SCTP_SENDV_NOINFO, 0);
 	}
 	if (!done) {
 		if (usrsctp_shutdown(sock, SHUT_WR) < 0) {

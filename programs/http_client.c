@@ -75,14 +75,14 @@ typedef char* caddr_t;
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	if (data == NULL) {
 		done = 1;
 		usrsctp_close(sock);
 	} else {
-		if (flags & MSG_NOTIFICATION) {
-			handle_notification((union sctp_notification *)data, datalen);
+		if (flags & USR_MSG_NOTIFICATION) {
+			handle_notification((union usrsctp_notification *)data, datalen);
 		} else {
 #ifdef _WIN32
 		_write(_fileno(stdout), data, (unsigned int)datalen);
@@ -107,21 +107,21 @@ main(int argc, char *argv[])
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in bind4;
 	struct sockaddr_in6 bind6;
-	struct sctp_udpencaps encaps;
-	struct sctp_sndinfo sndinfo;
-	struct sctp_rtoinfo rtoinfo;
-	struct sctp_initmsg initmsg;
-	struct sctp_event event;
+	struct usrsctp_udpencaps encaps;
+	struct usrsctp_sndinfo sndinfo;
+	struct usrsctp_rtoinfo rtoinfo;
+	struct usrsctp_initmsg initmsg;
+	struct usrsctp_event event;
 	int result = 0;
 	unsigned int i;
 	uint8_t address_family = 0;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
-	                          SCTP_PEER_ADDR_CHANGE,
-	                          SCTP_SEND_FAILED_EVENT,
- 	                          SCTP_REMOTE_ERROR,
-	                          SCTP_SHUTDOWN_EVENT,
-	                          SCTP_ADAPTATION_INDICATION,
-	                          SCTP_PARTIAL_DELIVERY_EVENT
+	uint16_t event_types[] = {USR_SCTP_ASSOC_CHANGE,
+	                          USR_SCTP_PEER_ADDR_CHANGE,
+	                          USR_SCTP_SEND_FAILED_EVENT,
+ 	                          USR_SCTP_REMOTE_ERROR,
+	                          USR_SCTP_SHUTDOWN_EVENT,
+	                          USR_SCTP_ADAPTATION_INDICATION,
+	                          USR_SCTP_PARTIAL_DELIVERY_EVENT
 	                        };
 
 	if (argc < 3) {
@@ -178,12 +178,12 @@ main(int argc, char *argv[])
 	}
 
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_assoc_id = USR_SCTP_ALL_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT");
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt USR_SCTP_EVENT");
 		}
 	}
 
@@ -191,7 +191,7 @@ main(int argc, char *argv[])
 	rtoinfo.srto_initial = 1000;
 	rtoinfo.srto_min = 1000;
 	rtoinfo.srto_max = 8000;
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RTOINFO, (const void *)&rtoinfo, (socklen_t)sizeof(struct sctp_rtoinfo)) < 0) {
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_RTOINFO, (const void *)&rtoinfo, (socklen_t)sizeof(struct usrsctp_rtoinfo)) < 0) {
 		perror("setsockopt");
 		usrsctp_close(sock);
 		result = RETVAL_CATCHALL;
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 	initmsg.sinit_max_instreams = 1;
 	initmsg.sinit_max_attempts = 5;
 	initmsg.sinit_max_init_timeo = 4000;
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, (const void *)&initmsg, (socklen_t)sizeof(struct sctp_initmsg)) < 0) {
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_INITMSG, (const void *)&initmsg, (socklen_t)sizeof(struct usrsctp_initmsg)) < 0) {
 		perror("setsockopt");
 		usrsctp_close(sock);
 		result = RETVAL_CATCHALL;
@@ -243,10 +243,10 @@ main(int argc, char *argv[])
 	}
 
 	if (argc > 5) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = address_family;
 		encaps.sue_port = htons(atoi(argv[5]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void *)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void *)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 			usrsctp_close(sock);
 			result = RETVAL_CATCHALL;
@@ -289,10 +289,10 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
+	memset(&sndinfo, 0, sizeof(struct usrsctp_sndinfo));
 	sndinfo.snd_ppid = htonl(63); /* PPID for HTTP/SCTP */
 	/* send GET request */
-	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, &sndinfo, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, &sndinfo, sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 		usrsctp_close(sock);
 		result = RETVAL_CATCHALL;

@@ -174,12 +174,12 @@ handle_connection(void *arg)
 	int flags;
 	struct sockaddr_in addr;
 	socklen_t len;
-	union sctp_notification *snp;
-	struct sctp_paddr_change *spc;
+	union usrsctp_notification *snp;
+	struct usrsctp_paddr_change *spc;
 	struct timeval note_time;
 	unsigned int infotype;
-	struct sctp_recvv_rn rn;
-	socklen_t infolen = sizeof(struct sctp_recvv_rn);
+	struct usrsctp_recvv_rn rn;
+	socklen_t infolen = sizeof(struct usrsctp_recvv_rn);
 	unsigned long messages = 0;
 	unsigned long long first_length = 0;
 	unsigned long long sum = 0;
@@ -198,7 +198,7 @@ handle_connection(void *arg)
 	flags = 0;
 	len = (socklen_t)sizeof(struct sockaddr_in);
 	infotype = 0;
-	memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+	memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 	n = usrsctp_recvv(conn_sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
@@ -210,14 +210,14 @@ handle_connection(void *arg)
 
 	while (n > 0) {
 		recv_calls++;
-		if (flags & MSG_NOTIFICATION) {
+		if (flags & USR_MSG_NOTIFICATION) {
 			notifications++;
 			gettimeofday(&note_time, NULL);
 			printf("notification arrived at %f\n", note_time.tv_sec+(double)note_time.tv_usec/1000000.0);
-			snp = (union sctp_notification *)buf;
-			if (snp->sn_header.sn_type == SCTP_PEER_ADDR_CHANGE) {
+			snp = (union usrsctp_notification *)buf;
+			if (snp->sn_header.sn_type == USR_SCTP_PEER_ADDR_CHANGE) {
 				spc = &snp->sn_paddr_change;
-				printf("SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
+				printf("USR_SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
 			}
 		} else {
 			if (very_verbose) {
@@ -246,9 +246,9 @@ handle_connection(void *arg)
 		}
 		flags = 0;
 		len = (socklen_t)sizeof(struct sockaddr_in);
-		infolen = sizeof(struct sctp_recvv_rn);
+		infolen = sizeof(struct usrsctp_recvv_rn);
 		infotype = 0;
-		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 		n = usrsctp_recvv(conn_sock, (void *) buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 		                  &infolen, &infotype, &flags);
 	}
@@ -272,7 +272,7 @@ handle_connection(void *arg)
 
 static int
 send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info) {
-	struct sctp_sendv_spa sendv_spa;
+	struct usrsctp_sendv_spa sendv_spa;
 
 	if ((cb_messages == 0) && verbose) {
 		printf("Start sending ");
@@ -286,12 +286,12 @@ send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info) {
 		fflush(stdout);
 	}
 
-	sendv_spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
+	sendv_spa.sendv_flags = USR_SCTP_SEND_SNDINFO_VALID | USR_SCTP_SEND_PRINFO_VALID;
 
 	sendv_spa.sendv_sndinfo.snd_sid = 0;
 	sendv_spa.sendv_sndinfo.snd_flags = 0;
 	if (unordered != 0) {
-		sendv_spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
+		sendv_spa.sendv_sndinfo.snd_flags |= USR_SCTP_UNORDERED;
 	}
 	sendv_spa.sendv_sndinfo.snd_ppid = 0;
 	sendv_spa.sendv_sndinfo.snd_context = 0;
@@ -299,24 +299,24 @@ send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info) {
 
 	sendv_spa.sendv_prinfo.pr_policy = 0;
 	switch (policy) {
-#ifdef SCTP_PR_SCTP_NONE
+#ifdef USR_SCTP_PR_SCTP_NONE
 	case 0:
-		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
+		sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_NONE;
 		break;
 #endif
-#ifdef SCTP_PR_SCTP_TTL
+#ifdef USR_SCTP_PR_SCTP_TTL
 	case 1:
-		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+		sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_TTL;
 		break;
 #endif
-#ifdef SCTP_PR_SCTP_RTX
+#ifdef USR_SCTP_PR_SCTP_RTX
 	case 2:
-		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+		sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_RTX;
 		break;
 #endif
-#ifdef SCTP_PR_SCTP_BUF
+#ifdef USR_SCTP_PR_SCTP_BUF
 	case 3:
-		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_BUF;
+		sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_BUF;
 		break;
 #endif
 	default:
@@ -332,7 +332,7 @@ send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info) {
 
 		if (usrsctp_sendv(psock, buffer, length,
 		                  (struct sockaddr *) &remote_addr, 1,
-		                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
+		                  (void *)&sendv_spa, (socklen_t)sizeof(struct usrsctp_sendv_spa), USR_SCTP_SENDV_SPA,
 		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
 				perror("usrsctp_sendv (cb)");
@@ -352,9 +352,9 @@ send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info) {
 			printf("Sending final message number %lu.\n", cb_messages + 1);
 		}
 
-		sendv_spa.sendv_sndinfo.snd_flags |= SCTP_EOF;
+		sendv_spa.sendv_sndinfo.snd_flags |= USR_SCTP_EOF;
 		if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-		                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
+		                  (void *)&sendv_spa, (socklen_t)sizeof(struct usrsctp_sendv_spa), USR_SCTP_SENDV_SPA,
 		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
 				perror("usrsctp_sendv (cb)");
@@ -376,7 +376,7 @@ send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info) {
 
 static int
 server_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	struct timeval now, diff_time;
 	double seconds;
@@ -406,7 +406,7 @@ server_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 
 static int
 client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	free(data);
 	return (1);
@@ -427,9 +427,9 @@ int main(int argc, char **argv)
 	double seconds;
 	double throughput;
 	int nodelay = 0;
-	struct sctp_assoc_value av;
-	struct sctp_udpencaps encaps;
-	struct sctp_sendv_spa sendv_spa;
+	struct usrsctp_assoc_value av;
+	struct usrsctp_udpencaps encaps;
+	struct usrsctp_sendv_spa sendv_spa;
 	unsigned long messages = 0;
 #ifdef _WIN32
 	unsigned long srcAddr;
@@ -439,7 +439,7 @@ int main(int argc, char **argv)
 	pthread_t tid;
 #endif
 	int fragpoint = 0;
-	struct sctp_setadaptation ind = {0};
+	struct usrsctp_setadaptation ind = {0};
 #ifdef _WIN32
 	char *opt;
 	int optind;
@@ -716,7 +716,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_ADAPTATION_LAYER, (const void*)&ind, (socklen_t)sizeof(struct sctp_setadaptation)) < 0) {
+	if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_ADAPTATION_LAYER, (const void*)&ind, (socklen_t)sizeof(struct usrsctp_setadaptation)) < 0) {
 		perror("setsockopt");
 	}
 
@@ -776,10 +776,10 @@ int main(int argc, char **argv)
 		}
 		/* usrsctp_close(psock);  unreachable */
 	} else {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;
 		encaps.sue_port = htons(remote_udp_port);
-		if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 
@@ -799,13 +799,13 @@ int main(int argc, char **argv)
 		} else {
 			optval = 0;
 		}
-		usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(int));
+		usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_NODELAY, &optval, sizeof(int));
 
 		if (fragpoint) {
 			av.assoc_id = 0;
 			av.assoc_value = fragpoint;
-			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_MAXSEG, &av, sizeof(struct sctp_assoc_value)) < 0) {
-				perror("setsockopt: SCTP_MAXSEG");
+			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_MAXSEG, &av, sizeof(struct usrsctp_assoc_value)) < 0) {
+				perror("setsockopt: USR_SCTP_MAXSEG");
 			}
 		}
 
@@ -854,12 +854,12 @@ int main(int argc, char **argv)
 #endif
 			}
 		} else {
-			sendv_spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
+			sendv_spa.sendv_flags = USR_SCTP_SEND_SNDINFO_VALID | USR_SCTP_SEND_PRINFO_VALID;
 
 			sendv_spa.sendv_sndinfo.snd_sid = 0;
 			sendv_spa.sendv_sndinfo.snd_flags = 0;
 			if (unordered != 0) {
-				sendv_spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
+				sendv_spa.sendv_sndinfo.snd_flags |= USR_SCTP_UNORDERED;
 			}
 			sendv_spa.sendv_sndinfo.snd_ppid = 0;
 			sendv_spa.sendv_sndinfo.snd_context = 0;
@@ -867,24 +867,24 @@ int main(int argc, char **argv)
 
 			sendv_spa.sendv_prinfo.pr_policy = 0;
 			switch (policy) {
-#ifdef SCTP_PR_SCTP_NONE
+#ifdef USR_SCTP_PR_SCTP_NONE
 			case 0:
-				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
+				sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_NONE;
 				break;
 #endif
-#ifdef SCTP_PR_SCTP_TTL
+#ifdef USR_SCTP_PR_SCTP_TTL
 			case 1:
-				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+				sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_TTL;
 				break;
 #endif
-#ifdef SCTP_PR_SCTP_RTX
+#ifdef USR_SCTP_PR_SCTP_RTX
 			case 2:
-				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+				sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_RTX;
 				break;
 #endif
-#ifdef SCTP_PR_SCTP_BUF
+#ifdef USR_SCTP_PR_SCTP_BUF
 			case 3:
-				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_BUF;
+				sendv_spa.sendv_prinfo.pr_policy = USR_SCTP_PR_SCTP_BUF;
 				break;
 #endif
 			default:
@@ -910,7 +910,7 @@ int main(int argc, char **argv)
 				}
 
 				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-				                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
+				                  (void *)&sendv_spa, (socklen_t)sizeof(struct usrsctp_sendv_spa), USR_SCTP_SENDV_SPA,
 				                  0) < 0) {
 					perror("usrsctp_sendv");
 					exit(1);
@@ -921,9 +921,9 @@ int main(int argc, char **argv)
 				printf("Sending message number %lu.\n", messages + 1);
 			}
 
-			sendv_spa.sendv_sndinfo.snd_flags |= SCTP_EOF;
+			sendv_spa.sendv_sndinfo.snd_flags |= USR_SCTP_EOF;
 			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-			                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
+			                  (void *)&sendv_spa, (socklen_t)sizeof(struct usrsctp_sendv_spa), USR_SCTP_SENDV_SPA,
 			                  0) < 0) {
 				perror("usrsctp_sendv");
 				exit(1);

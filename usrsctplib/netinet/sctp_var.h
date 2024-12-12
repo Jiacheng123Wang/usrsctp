@@ -425,7 +425,7 @@ int sctp_flush(struct socket *, int);
 int sctp_shutdown(struct socket *);
 int sctp_bindx(struct socket *, int, struct sockaddr_storage *,
 	int, int, struct proc *);
-/* can't use sctp_assoc_t here */
+/* can't use usrsctp_assoc_t here */
 int sctp_peeloff(struct socket *, struct socket *, int, caddr_t, int *);
 #if !defined(__Userspace__)
 int sctp_ingetaddr(struct socket *, struct sockaddr **);

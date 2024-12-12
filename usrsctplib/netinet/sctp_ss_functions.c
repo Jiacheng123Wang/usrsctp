@@ -938,7 +938,7 @@ sctp_ss_fcfs_scheduled(struct sctp_tcb *stcb,
 }
 
 const struct sctp_ss_functions sctp_ss_functions[] = {
-/* SCTP_SS_DEFAULT */
+/* USR_SCTP_SS_DEFAULT */
 {
 #if defined(_WIN32)
 	sctp_ss_default_init,

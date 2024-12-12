@@ -1676,7 +1676,7 @@ null_return:
  * out in the COMM_UP notification
  */
 struct sctp_tcb *
-sctp_findasoc_ep_asocid_locked(struct sctp_inpcb *inp, sctp_assoc_t asoc_id, int want_lock)
+sctp_findasoc_ep_asocid_locked(struct sctp_inpcb *inp, usrsctp_assoc_t asoc_id, int want_lock)
 {
 	/*
 	 * Use my the assoc_id to find a endpoint
@@ -1719,7 +1719,7 @@ sctp_findasoc_ep_asocid_locked(struct sctp_inpcb *inp, sctp_assoc_t asoc_id, int
 }
 
 struct sctp_tcb *
-sctp_findassociation_ep_asocid(struct sctp_inpcb *inp, sctp_assoc_t asoc_id, int want_lock)
+sctp_findassociation_ep_asocid(struct sctp_inpcb *inp, usrsctp_assoc_t asoc_id, int want_lock)
 {
 	struct sctp_tcb *stcb;
 
@@ -2463,8 +2463,8 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 	SCTPDBG(SCTP_DEBUG_PCB1, "stcb:%p inp:%p\n", (void *)stcb, (void *)inp);
 	if (stcb == NULL && inp) {
 		/* Found a EP but not this address */
-		if ((ch->chunk_type == SCTP_INITIATION) ||
-		    (ch->chunk_type == SCTP_INITIATION_ACK)) {
+		if ((ch->chunk_type == USR_SCTP_INITIATION) ||
+		    (ch->chunk_type == USR_SCTP_INITIATION_ACK)) {
 			/*-
 			 * special hook, we do NOT return linp or an
 			 * association that is linked to an existing
@@ -2669,7 +2669,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
 	inp->idata_supported = 0;
-	inp->rcv_edmid = SCTP_EDMID_NONE;
+	inp->rcv_edmid = USR_SCTP_EDMID_NONE;
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	inp->fibnum = so->so_fibnum;
@@ -2888,8 +2888,8 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m->local_hmacs = sctp_default_supported_hmaclist();
 	m->local_auth_chunks = sctp_alloc_chunklist();
 	if (inp->asconf_supported) {
-		sctp_auth_add_chunk(SCTP_ASCONF, m->local_auth_chunks);
-		sctp_auth_add_chunk(SCTP_ASCONF_ACK, m->local_auth_chunks);
+		sctp_auth_add_chunk(USR_SCTP_ASCONF, m->local_auth_chunks);
+		sctp_auth_add_chunk(USR_SCTP_ASCONF_ACK, m->local_auth_chunks);
 	}
 	m->default_dscp = 0;
 #ifdef INET6
@@ -4729,15 +4729,15 @@ sctp_aloc_a_assoc_id(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 		return (0);
 	}
 	/*
-	 * We don't allow assoc id to be one of SCTP_FUTURE_ASSOC,
-	 * SCTP_CURRENT_ASSOC and SCTP_ALL_ASSOC.
+	 * We don't allow assoc id to be one of USR_SCTP_FUTURE_ASSOC,
+	 * USR_SCTP_CURRENT_ASSOC and USR_SCTP_ALL_ASSOC.
 	 */
-	if (inp->sctp_associd_counter <= SCTP_ALL_ASSOC) {
-		inp->sctp_associd_counter = SCTP_ALL_ASSOC + 1;
+	if (inp->sctp_associd_counter <= USR_SCTP_ALL_ASSOC) {
+		inp->sctp_associd_counter = USR_SCTP_ALL_ASSOC + 1;
 	}
 	id = inp->sctp_associd_counter;
 	inp->sctp_associd_counter++;
-	lstcb = sctp_findasoc_ep_asocid_locked(inp, (sctp_assoc_t)id, 0);
+	lstcb = sctp_findasoc_ep_asocid_locked(inp, (usrsctp_assoc_t)id, 0);
 	if (lstcb) {
 		goto try_again;
 	}
@@ -5411,7 +5411,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 					if (sctp_stcb_is_feature_on(inp, stcb, SCTP_PCB_FLAGS_PDAPIEVNT) && (so != NULL)) {
 						sctp_ulp_notify(SCTP_NOTIFY_PARTIAL_DELVIERY_INDICATION,
 						                stcb,
-						                SCTP_PARTIAL_DELIVERY_ABORTED,
+						                USR_SCTP_PARTIAL_DELIVERY_ABORTED,
 						                (void *)sq,
 						                SCTP_SO_LOCKED);
 					}
@@ -7298,7 +7298,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				 * as allowed by the peer.
 				 */
 				zero_chksum_p = (struct sctp_zero_checksum_acceptable *)phdr;
-				if ((ntohl(zero_chksum_p->edmid) != SCTP_EDMID_NONE) &&
+				if ((ntohl(zero_chksum_p->edmid) != USR_SCTP_EDMID_NONE) &&
 				    (ntohl(zero_chksum_p->edmid) == stcb->asoc.rcv_edmid)) {
 					stcb->asoc.snd_edmid = stcb->asoc.rcv_edmid;
 				}
@@ -7321,25 +7321,25 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			num_ent = plen - sizeof(struct sctp_paramhdr);
 			for (i = 0; i < num_ent; i++) {
 				switch (pr_supported->chunk_types[i]) {
-				case SCTP_ASCONF:
+				case USR_SCTP_ASCONF:
 					peer_supports_asconf = 1;
 					break;
-				case SCTP_ASCONF_ACK:
+				case USR_SCTP_ASCONF_ACK:
 					peer_supports_asconf_ack = 1;
 					break;
-				case SCTP_FORWARD_CUM_TSN:
+				case USR_SCTP_FORWARD_CUM_TSN:
 					peer_supports_prsctp = 1;
 					break;
-				case SCTP_PACKET_DROPPED:
+				case USR_SCTP_PACKET_DROPPED:
 					peer_supports_pktdrop = 1;
 					break;
-				case SCTP_NR_SELECTIVE_ACK:
+				case USR_SCTP_NR_SELECTIVE_ACK:
 					peer_supports_nrsack = 1;
 					break;
-				case SCTP_STREAM_RESET:
+				case USR_SCTP_STREAM_RESET:
 					peer_supports_reconfig = 1;
 					break;
-				case SCTP_AUTHENTICATION:
+				case USR_SCTP_AUTHENTICATION:
 					peer_supports_auth = 1;
 					break;
 				case SCTP_IDATA:
@@ -7426,9 +7426,9 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				(void)sctp_auth_add_chunk(chunks->chunk_types[i],
 							  stcb->asoc.peer_auth_chunks);
 				/* record asconf/asconf-ack if listed */
-				if (chunks->chunk_types[i] == SCTP_ASCONF)
+				if (chunks->chunk_types[i] == USR_SCTP_ASCONF)
 					saw_asconf = 1;
-				if (chunks->chunk_types[i] == SCTP_ASCONF_ACK)
+				if (chunks->chunk_types[i] == USR_SCTP_ASCONF_ACK)
 					saw_asconf_ack = 1;
 			}
 			got_chklist = 1;

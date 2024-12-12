@@ -83,15 +83,15 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 int
 init_fuzzer(void) {
 	static uint8_t initialized = 0;
-	struct sctp_event event;
+	struct usrsctp_event event;
 	uint16_t event_types[] = {
-		SCTP_ASSOC_CHANGE,
-		SCTP_PEER_ADDR_CHANGE,
-		SCTP_SEND_FAILED_EVENT,
-		SCTP_REMOTE_ERROR,
-		SCTP_SHUTDOWN_EVENT,
-		SCTP_ADAPTATION_INDICATION,
-		SCTP_PARTIAL_DELIVERY_EVENT};
+		USR_SCTP_ASSOC_CHANGE,
+		USR_SCTP_PEER_ADDR_CHANGE,
+		USR_SCTP_SEND_FAILED_EVENT,
+		USR_SCTP_REMOTE_ERROR,
+		USR_SCTP_SHUTDOWN_EVENT,
+		USR_SCTP_ADAPTATION_INDICATION,
+		USR_SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
 	struct linger so_linger;
 	int result;
@@ -135,12 +135,12 @@ init_fuzzer(void) {
 	}
 
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_FUTURE_ASSOC;
+	event.se_assoc_id = USR_SCTP_FUTURE_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
-		if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT s_l");
+		if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, USR_SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt USR_SCTP_EVENT s_l");
 			exit(EXIT_FAILURE);
 		}
 	}

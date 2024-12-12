@@ -85,73 +85,73 @@ struct sctp_paramhdr {
 /*
  * read-write options
  */
-#define SCTP_RTOINFO			0x00000001
-#define SCTP_ASSOCINFO			0x00000002
-#define SCTP_INITMSG			0x00000003
-#define SCTP_NODELAY			0x00000004
-#define SCTP_AUTOCLOSE			0x00000005
-#define SCTP_SET_PEER_PRIMARY_ADDR	0x00000006
-#define SCTP_PRIMARY_ADDR		0x00000007
-#define SCTP_ADAPTATION_LAYER		0x00000008
+#define USR_SCTP_RTOINFO			0x00000001
+#define USR_SCTP_ASSOCINFO			0x00000002
+#define USR_SCTP_INITMSG			0x00000003
+#define USR_SCTP_NODELAY			0x00000004
+#define USR_SCTP_AUTOCLOSE			0x00000005
+#define USR_SCTP_SET_PEER_PRIMARY_ADDR	0x00000006
+#define USR_SCTP_PRIMARY_ADDR		0x00000007
+#define USR_SCTP_ADAPTATION_LAYER		0x00000008
 /* same as above */
 #define SCTP_ADAPTION_LAYER		0x00000008
-#define SCTP_DISABLE_FRAGMENTS		0x00000009
-#define SCTP_PEER_ADDR_PARAMS 		0x0000000a
+#define USR_SCTP_DISABLE_FRAGMENTS		0x00000009
+#define USR_SCTP_PEER_ADDR_PARAMS 		0x0000000a
 #define SCTP_DEFAULT_SEND_PARAM		0x0000000b
 /* ancillary data/notification interest options */
 #define SCTP_EVENTS			0x0000000c /* deprecated */
 /* Without this applied we will give V4 and V6 addresses on a V6 socket */
-#define SCTP_I_WANT_MAPPED_V4_ADDR	0x0000000d
-#define SCTP_MAXSEG 			0x0000000e
-#define SCTP_DELAYED_SACK               0x0000000f
-#define SCTP_FRAGMENT_INTERLEAVE        0x00000010
-#define SCTP_PARTIAL_DELIVERY_POINT     0x00000011
+#define USR_SCTP_I_WANT_MAPPED_V4_ADDR	0x0000000d
+#define USR_SCTP_MAXSEG 			0x0000000e
+#define USR_SCTP_DELAYED_SACK               0x0000000f
+#define USR_SCTP_FRAGMENT_INTERLEAVE        0x00000010
+#define USR_SCTP_PARTIAL_DELIVERY_POINT     0x00000011
 /* authentication support */
-#define SCTP_AUTH_CHUNK 		0x00000012
-#define SCTP_AUTH_KEY 			0x00000013
-#define SCTP_HMAC_IDENT 		0x00000014
-#define SCTP_AUTH_ACTIVE_KEY 		0x00000015
-#define SCTP_AUTH_DELETE_KEY 		0x00000016
+#define USR_SCTP_AUTH_CHUNK 		0x00000012
+#define USR_SCTP_AUTH_KEY 			0x00000013
+#define USR_SCTP_HMAC_IDENT 		0x00000014
+#define USR_SCTP_AUTH_ACTIVE_KEY 		0x00000015
+#define USR_SCTP_AUTH_DELETE_KEY 		0x00000016
 #define SCTP_USE_EXT_RCVINFO		0x00000017
-#define SCTP_AUTO_ASCONF		0x00000018 /* rw */
+#define USR_SCTP_AUTO_ASCONF		0x00000018 /* rw */
 #define SCTP_MAXBURST			0x00000019 /* rw */
-#define SCTP_MAX_BURST			0x00000019 /* rw */
+#define USR_SCTP_MAX_BURST			0x00000019 /* rw */
 /* assoc level context */
-#define SCTP_CONTEXT                    0x0000001a /* rw */
+#define USR_SCTP_CONTEXT                    0x0000001a /* rw */
 /* explicit EOR signalling */
-#define SCTP_EXPLICIT_EOR               0x0000001b
-#define SCTP_REUSE_PORT                 0x0000001c /* rw */
-#define SCTP_AUTH_DEACTIVATE_KEY	0x0000001d
-#define SCTP_EVENT                      0x0000001e
-#define SCTP_RECVRCVINFO                0x0000001f
-#define SCTP_RECVNXTINFO                0x00000020
-#define SCTP_DEFAULT_SNDINFO            0x00000021
-#define SCTP_DEFAULT_PRINFO             0x00000022
+#define USR_SCTP_EXPLICIT_EOR               0x0000001b
+#define USR_SCTP_REUSE_PORT                 0x0000001c /* rw */
+#define USR_SCTP_AUTH_DEACTIVATE_KEY	0x0000001d
+#define USR_SCTP_EVENT                      0x0000001e
+#define USR_SCTP_RECVRCVINFO                0x0000001f
+#define USR_SCTP_RECVNXTINFO                0x00000020
+#define USR_SCTP_DEFAULT_SNDINFO            0x00000021
+#define USR_SCTP_DEFAULT_PRINFO             0x00000022
 #define SCTP_PEER_ADDR_THLDS            0x00000023
-#define SCTP_REMOTE_UDP_ENCAPS_PORT     0x00000024
-#define SCTP_ECN_SUPPORTED              0x00000025
-#define SCTP_PR_SUPPORTED               0x00000026
-#define SCTP_AUTH_SUPPORTED             0x00000027
-#define SCTP_ASCONF_SUPPORTED           0x00000028
-#define SCTP_RECONFIG_SUPPORTED         0x00000029
-#define SCTP_NRSACK_SUPPORTED           0x00000030
-#define SCTP_PKTDROP_SUPPORTED          0x00000031
-#define SCTP_MAX_CWND                   0x00000032
-#define SCTP_ACCEPT_ZERO_CHECKSUM       0x00000033
+#define USR_SCTP_REMOTE_UDP_ENCAPS_PORT     0x00000024
+#define USR_SCTP_ECN_SUPPORTED              0x00000025
+#define USR_SCTP_PR_SUPPORTED               0x00000026
+#define USR_SCTP_AUTH_SUPPORTED             0x00000027
+#define USR_SCTP_ASCONF_SUPPORTED           0x00000028
+#define USR_SCTP_RECONFIG_SUPPORTED         0x00000029
+#define USR_SCTP_NRSACK_SUPPORTED           0x00000030
+#define USR_SCTP_PKTDROP_SUPPORTED          0x00000031
+#define USR_SCTP_MAX_CWND                   0x00000032
+#define USR_SCTP_ACCEPT_ZERO_CHECKSUM       0x00000033
 
 /*
  * read-only options
  */
-#define SCTP_STATUS			0x00000100
-#define SCTP_GET_PEER_ADDR_INFO		0x00000101
+#define USR_SCTP_STATUS			0x00000100
+#define USR_SCTP_GET_PEER_ADDR_INFO		0x00000101
 /* authentication support */
-#define SCTP_PEER_AUTH_CHUNKS 		0x00000102
-#define SCTP_LOCAL_AUTH_CHUNKS 		0x00000103
-#define SCTP_GET_ASSOC_NUMBER           0x00000104 /* ro */
-#define SCTP_GET_ASSOC_ID_LIST          0x00000105 /* ro */
-#define SCTP_TIMEOUTS                   0x00000106
-#define SCTP_PR_STREAM_STATUS           0x00000107
-#define SCTP_PR_ASSOC_STATUS            0x00000108
+#define USR_SCTP_PEER_AUTH_CHUNKS 		0x00000102
+#define USR_SCTP_LOCAL_AUTH_CHUNKS 		0x00000103
+#define USR_SCTP_GET_ASSOC_NUMBER           0x00000104 /* ro */
+#define USR_SCTP_GET_ASSOC_ID_LIST          0x00000105 /* ro */
+#define USR_SCTP_TIMEOUTS                   0x00000106
+#define USR_SCTP_PR_STREAM_STATUS           0x00000107
+#define USR_SCTP_PR_ASSOC_STATUS            0x00000108
 
 /*
  * user socket options: BSD implementation specific
@@ -174,19 +174,19 @@ struct sctp_paramhdr {
  * field.
  */
 
-#define SCTP_ENABLE_STREAM_RESET	0x00000900 /* struct sctp_assoc_value */
-#define SCTP_RESET_STREAMS		0x00000901 /* struct sctp_reset_streams */
-#define SCTP_RESET_ASSOC		0x00000902 /* sctp_assoc_t */
-#define SCTP_ADD_STREAMS		0x00000903 /* struct sctp_add_streams */
+#define SCTP_ENABLE_STREAM_RESET	0x00000900 /* struct usrsctp_assoc_value */
+#define USR_SCTP_RESET_STREAMS		0x00000901 /* struct usrsctp_reset_streams */
+#define USR_SCTP_RESET_ASSOC		0x00000902 /* usrsctp_assoc_t */
+#define USR_SCTP_ADD_STREAMS		0x00000903 /* struct usrsctp_add_streams */
 
 /* For enable stream reset */
-#define SCTP_ENABLE_RESET_STREAM_REQ 	0x00000001
-#define SCTP_ENABLE_RESET_ASSOC_REQ 	0x00000002
-#define SCTP_ENABLE_CHANGE_ASSOC_REQ 	0x00000004
-#define SCTP_ENABLE_VALUE_MASK		0x00000007
+#define USR_SCTP_ENABLE_RESET_STREAM_REQ 	0x00000001
+#define USR_SCTP_ENABLE_RESET_ASSOC_REQ 	0x00000002
+#define USR_SCTP_ENABLE_CHANGE_ASSOC_REQ 	0x00000004
+#define USR_SCTP_ENABLE_VALUE_MASK		0x00000007
 /* For reset streams */
-#define SCTP_STREAM_RESET_INCOMING	0x00000001
-#define SCTP_STREAM_RESET_OUTGOING	0x00000002
+#define USR_SCTP_STREAM_RESET_INCOMING	0x00000001
+#define USR_SCTP_STREAM_RESET_OUTGOING	0x00000002
 
 /* here on down are more implementation specific */
 #define SCTP_SET_DEBUG_LEVEL		0x00001005
@@ -200,8 +200,8 @@ struct sctp_paramhdr {
 #define SCTP_STREAM_SCHEDULER		0x00001203
 #define SCTP_STREAM_SCHEDULER_VALUE	0x00001204
 /* The next two are for backwards compatibility. */
-#define SCTP_PLUGGABLE_SS		SCTP_STREAM_SCHEDULER
-#define SCTP_SS_VALUE			SCTP_STREAM_SCHEDULER_VALUE
+#define USR_SCTP_PLUGGABLE_SS		SCTP_STREAM_SCHEDULER
+#define USR_SCTP_SS_VALUE			SCTP_STREAM_SCHEDULER_VALUE
 #define SCTP_CC_OPTION			0x00001205 /* Options for CC modules */
 /* For I-DATA */
 #define SCTP_INTERLEAVING_SUPPORTED	0x00001206
@@ -299,30 +299,30 @@ struct sctp_paramhdr {
  * congestion control
  */
 /* Standard TCP Congestion Control */
-#define SCTP_CC_RFC2581		0x00000000
+#define USR_SCTP_CC_RFC2581		0x00000000
 /* High Speed TCP Congestion Control (Floyd) */
-#define SCTP_CC_HSTCP		0x00000001
+#define USR_SCTP_CC_HSTCP		0x00000001
 /* HTCP Congestion Control */
-#define SCTP_CC_HTCP		0x00000002
+#define USR_SCTP_CC_HTCP		0x00000002
 /* RTCC Congestion Control - RFC2581 plus */
-#define SCTP_CC_RTCC            0x00000003
+#define USR_SCTP_CC_RTCC            0x00000003
 
-#define SCTP_CC_OPT_RTCC_SETMODE	0x00002000
+#define USR_SCTP_CC_OPT_RTCC_SETMODE	0x00002000
 #define SCTP_CC_OPT_USE_DCCC_ECN	0x00002001
-#define SCTP_CC_OPT_STEADY_STEP         0x00002002
+#define USR_SCTP_CC_OPT_STEADY_STEP         0x00002002
 
-#define SCTP_CMT_OFF            0
-#define SCTP_CMT_BASE           1
-#define SCTP_CMT_RPV1           2
-#define SCTP_CMT_RPV2           3
-#define SCTP_CMT_MPTCP          4
-#define SCTP_CMT_MAX            SCTP_CMT_MPTCP
+#define USR_SCTP_CMT_OFF            0
+#define USR_SCTP_CMT_BASE           1
+#define USR_SCTP_CMT_RPV1           2
+#define USR_SCTP_CMT_RPV2           3
+#define USR_SCTP_CMT_MPTCP          4
+#define USR_SCTP_CMT_MAX            USR_SCTP_CMT_MPTCP
 
 /* RS - Supported stream scheduling modules for pluggable
  * stream scheduling
  */
 /* Default simple round-robin */
-#define SCTP_SS_DEFAULT			0x00000000
+#define USR_SCTP_SS_DEFAULT			0x00000000
 /* Real round-robin */
 #define SCTP_SS_RR			0x00000001
 /* Real round-robin per packet */
@@ -334,11 +334,11 @@ struct sctp_paramhdr {
 /* First-come, first-serve */
 #define SCTP_SS_FCFS			0x00000005
 /* The next five are for backwards compatibility. */
-#define SCTP_SS_ROUND_ROBIN		SCTP_SS_RR
-#define SCTP_SS_ROUND_ROBIN_PACKET	SCTP_SS_RR_PKT
-#define SCTP_SS_PRIORITY		SCTP_SS_PRIO
-#define SCTP_SS_FAIR_BANDWITH		SCTP_SS_FB
-#define SCTP_SS_FIRST_COME		SCTP_SS_FCFS
+#define USR_SCTP_SS_ROUND_ROBIN		SCTP_SS_RR
+#define USR_SCTP_SS_ROUND_ROBIN_PACKET	SCTP_SS_RR_PKT
+#define USR_SCTP_SS_PRIORITY		SCTP_SS_PRIO
+#define USR_SCTP_SS_FAIR_BANDWITH		SCTP_SS_FB
+#define USR_SCTP_SS_FIRST_COME		SCTP_SS_FCFS
 
 /* fragment interleave constants
  * setting must be one of these or
@@ -351,16 +351,16 @@ struct sctp_paramhdr {
 /*
  * user state values
  */
-#define SCTP_CLOSED			0x0000
-#define SCTP_BOUND			0x1000
-#define SCTP_LISTEN			0x2000
-#define SCTP_COOKIE_WAIT		0x0002
-#define SCTP_COOKIE_ECHOED		0x0004
-#define SCTP_ESTABLISHED		0x0008
-#define SCTP_SHUTDOWN_SENT		0x0010
-#define SCTP_SHUTDOWN_RECEIVED		0x0020
-#define SCTP_SHUTDOWN_ACK_SENT		0x0040
-#define SCTP_SHUTDOWN_PENDING		0x0080
+#define USR_SCTP_CLOSED			0x0000
+#define USR_SCTP_BOUND			0x1000
+#define USR_SCTP_LISTEN			0x2000
+#define USR_SCTP_COOKIE_WAIT		0x0002
+#define USR_SCTP_COOKIE_ECHOED		0x0004
+#define USR_SCTP_ESTABLISHED		0x0008
+#define USR_SCTP_SHUTDOWN_SENT		0x0010
+#define USR_SCTP_SHUTDOWN_RECEIVED		0x0020
+#define USR_SCTP_SHUTDOWN_ACK_SENT		0x0040
+#define USR_SCTP_SHUTDOWN_PENDING		0x0080
 
 /*
  * SCTP operational error codes (user visible)
@@ -454,42 +454,42 @@ struct sctp_error_auth_invalid_hmac {
  * can find them.
  */
 /************0x00 series ***********/
-#define SCTP_DATA		0x00
-#define SCTP_INITIATION		0x01
-#define SCTP_INITIATION_ACK	0x02
-#define SCTP_SELECTIVE_ACK	0x03
-#define SCTP_HEARTBEAT_REQUEST	0x04
-#define SCTP_HEARTBEAT_ACK	0x05
-#define SCTP_ABORT_ASSOCIATION	0x06
-#define SCTP_SHUTDOWN		0x07
-#define SCTP_SHUTDOWN_ACK	0x08
-#define SCTP_OPERATION_ERROR	0x09
-#define SCTP_COOKIE_ECHO	0x0a
-#define SCTP_COOKIE_ACK		0x0b
-#define SCTP_ECN_ECHO		0x0c
-#define SCTP_ECN_CWR		0x0d
-#define SCTP_SHUTDOWN_COMPLETE	0x0e
+#define USR_SCTP_DATA		0x00
+#define USR_SCTP_INITIATION		0x01
+#define USR_SCTP_INITIATION_ACK	0x02
+#define USR_SCTP_SELECTIVE_ACK	0x03
+#define USR_SCTP_HEARTBEAT_REQUEST	0x04
+#define USR_SCTP_HEARTBEAT_ACK	0x05
+#define USR_SCTP_ABORT_ASSOCIATION	0x06
+#define USR_SCTP_SHUTDOWN		0x07
+#define USR_SCTP_SHUTDOWN_ACK	0x08
+#define USR_SCTP_OPERATION_ERROR	0x09
+#define USR_SCTP_COOKIE_ECHO	0x0a
+#define USR_SCTP_COOKIE_ACK		0x0b
+#define USR_SCTP_ECN_ECHO		0x0c
+#define USR_SCTP_ECN_CWR		0x0d
+#define USR_SCTP_SHUTDOWN_COMPLETE	0x0e
 /* RFC4895 */
-#define SCTP_AUTHENTICATION     0x0f
+#define USR_SCTP_AUTHENTICATION     0x0f
 /* EY nr_sack chunk id*/
-#define SCTP_NR_SELECTIVE_ACK	0x10
+#define USR_SCTP_NR_SELECTIVE_ACK	0x10
 /************0x40 series ***********/
 #define SCTP_IDATA		0x40
 /************0x80 series ***********/
 /* RFC5061 */
-#define	SCTP_ASCONF_ACK		0x80
+#define	USR_SCTP_ASCONF_ACK		0x80
 /* draft-ietf-stewart-pktdrpsctp */
-#define SCTP_PACKET_DROPPED	0x81
+#define USR_SCTP_PACKET_DROPPED	0x81
 /* draft-ietf-stewart-strreset-xxx */
-#define SCTP_STREAM_RESET       0x82
+#define USR_SCTP_STREAM_RESET       0x82
 
 /* RFC4820                         */
-#define SCTP_PAD_CHUNK          0x84
+#define USR_SCTP_PAD_CHUNK          0x84
 /************0xc0 series ***********/
 /* RFC3758 */
-#define SCTP_FORWARD_CUM_TSN	0xc0
+#define USR_SCTP_FORWARD_CUM_TSN	0xc0
 /* RFC5061 */
-#define SCTP_ASCONF		0xc1
+#define USR_SCTP_ASCONF		0xc1
 #define SCTP_IFORWARD_CUM_TSN	0xc2
 
 /* ABORT and SHUTDOWN COMPLETE FLAG */
@@ -512,9 +512,9 @@ struct sctp_error_auth_invalid_hmac {
 /* Data Chuck Specific Flags */
 #define SCTP_DATA_FRAG_MASK        0x03
 #define SCTP_DATA_MIDDLE_FRAG      0x00
-#define SCTP_DATA_LAST_FRAG        0x01
+#define USR_SCTP_DATA_LAST_FRAG        0x01
 #define SCTP_DATA_FIRST_FRAG       0x02
-#define SCTP_DATA_NOT_FRAG         0x03
+#define USR_SCTP_DATA_NOT_FRAG         0x03
 #define SCTP_DATA_UNORDERED        0x04
 #define SCTP_DATA_SACK_IMMEDIATELY 0x08
 /* ECN Nonce: SACK Chunk Specific Flags */

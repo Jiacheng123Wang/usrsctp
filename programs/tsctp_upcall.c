@@ -223,24 +223,24 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 	int events = usrsctp_get_events(upcall_socket);
 	struct tsctp_meta* tsctp_meta = (struct tsctp_meta*) upcall_data;
 
-	struct sctp_recvv_rn rn;
+	struct usrsctp_recvv_rn rn;
 	ssize_t n;
 	struct sockaddr_storage addr;
 	int recv_flags = 0;
 	socklen_t len = (socklen_t)sizeof(struct sockaddr_storage);
 	unsigned int infotype = 0;
-	socklen_t infolen = sizeof(struct sctp_recvv_rn);
-	struct sctp_rcvinfo *rcvinfo = (struct sctp_rcvinfo *) &rn;
-	memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+	socklen_t infolen = sizeof(struct usrsctp_recvv_rn);
+	struct usrsctp_rcvinfo *rcvinfo = (struct usrsctp_rcvinfo *) &rn;
+	memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 	struct timeval note_time;
-	union sctp_notification *snp;
-	struct sctp_paddr_change *spc;
+	union usrsctp_notification *snp;
+	struct usrsctp_paddr_change *spc;
 	struct timeval time_now;
 	struct timeval time_diff;
 	float seconds;
-	struct sctp_sndinfo snd_info;
+	struct usrsctp_sndinfo snd_info;
 
-	if (events & SCTP_EVENT_READ) {
+	if (events & USR_SCTP_EVENT_READ) {
 		while ((n = usrsctp_recvv(upcall_socket, tsctp_meta->buffer, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &recv_flags)) > 0) {
 
 			if (!tsctp_meta->stat_recv_calls) {
@@ -248,24 +248,24 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 			}
 			tsctp_meta->stat_recv_calls++;
 
-			if (recv_flags & MSG_NOTIFICATION) {
+			if (recv_flags & USR_MSG_NOTIFICATION) {
 				tsctp_meta->stat_notifications++;
 				gettimeofday(&note_time, NULL);
 				if (par_verbose) {
 					printf("notification arrived at %f\n", note_time.tv_sec + (double)note_time.tv_usec / 1000000.0);
 
-					snp = (union sctp_notification *)tsctp_meta->buffer;
-					if (snp->sn_header.sn_type == SCTP_PEER_ADDR_CHANGE) {
+					snp = (union usrsctp_notification *)tsctp_meta->buffer;
+					if (snp->sn_header.sn_type == USR_SCTP_PEER_ADDR_CHANGE) {
 						spc = &snp->sn_paddr_change;
-						printf("SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
+						printf("USR_SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
 					}
 				}
 			} else {
 				if (par_very_verbose) {
-					if (infotype == SCTP_RECVV_RCVINFO) {
+					if (infotype == USR_SCTP_RECVV_RCVINFO) {
 						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",
 							n,
-							(rcvinfo->rcv_flags & SCTP_UNORDERED) ? "unordered" : "ordered",
+							(rcvinfo->rcv_flags & USR_SCTP_UNORDERED) ? "unordered" : "ordered",
 							rcvinfo->rcv_sid,
 							rcvinfo->rcv_tsn,
 							(recv_flags & MSG_EOR) ? "- EOR" : ""
@@ -327,14 +327,14 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 		}
 	}
 
-	if ((events & SCTP_EVENT_WRITE) && tsctp_meta->par_role == TSCTP_CLIENT && !done) {
+	if ((events & USR_SCTP_EVENT_WRITE) && tsctp_meta->par_role == TSCTP_CLIENT && !done) {
 
-		memset(&snd_info, 0, sizeof(struct sctp_sndinfo));
+		memset(&snd_info, 0, sizeof(struct usrsctp_sndinfo));
 		if (tsctp_meta->par_ordered == 0) {
-			snd_info.snd_flags |= SCTP_UNORDERED;
+			snd_info.snd_flags |= USR_SCTP_UNORDERED;
 		}
 
-		while (usrsctp_sendv(upcall_socket, tsctp_meta->buffer, tsctp_meta->par_message_length, NULL, 0, &snd_info, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) > 0) {
+		while (usrsctp_sendv(upcall_socket, tsctp_meta->buffer, tsctp_meta->par_message_length, NULL, 0, &snd_info, (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) > 0) {
 			if (tsctp_meta->stat_messages == 0) {
 				gettimeofday(&tsctp_meta->stat_start, NULL);
 			}
@@ -397,8 +397,8 @@ int main(int argc, char **argv)
 	int sndbufsize = 0;
 	socklen_t intlen;
 	int nodelay = 0;
-	struct sctp_assoc_value av;
-	struct sctp_udpencaps encaps;
+	struct usrsctp_assoc_value av;
+	struct usrsctp_udpencaps encaps;
 	struct tsctp_meta *meta;
 
 	uint16_t par_port = DEFAULT_PORT;
@@ -414,7 +414,7 @@ int main(int argc, char **argv)
 	in_addr_t src_addr;
 #endif
 	int fragpoint = 0;
-	struct sctp_setadaptation ind = {0};
+	struct usrsctp_setadaptation ind = {0};
 #ifdef _WIN32
 	char *opt;
 	int optind;
@@ -656,8 +656,8 @@ int main(int argc, char **argv)
 	}
 
 	optval = 1;
-	if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &optval, sizeof(optval)) < 0) {
-		perror("usrsctp_setsockopt SCTP_RECVRCVINFO");
+	if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_RECVRCVINFO, &optval, sizeof(optval)) < 0) {
+		perror("usrsctp_setsockopt USR_SCTP_RECVRCVINFO");
 	}
 
 	usrsctp_set_non_blocking(psock, 1);
@@ -667,7 +667,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_ADAPTATION_LAYER, (const void*)&ind, (socklen_t)sizeof(struct sctp_setadaptation)) < 0) {
+	if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_ADAPTATION_LAYER, (const void*)&ind, (socklen_t)sizeof(struct usrsctp_setadaptation)) < 0) {
 		perror("setsockopt");
 	}
 
@@ -702,10 +702,10 @@ int main(int argc, char **argv)
 		}
 
 	} else {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;
 		encaps.sue_port = htons(remote_udp_port);
-		if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 
@@ -723,13 +723,13 @@ int main(int argc, char **argv)
 
 		usrsctp_set_upcall(psock, handle_upcall, meta);
 
-		usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_NODELAY, &nodelay, sizeof(nodelay));
+		usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_NODELAY, &nodelay, sizeof(nodelay));
 
 		if (fragpoint) {
 			av.assoc_id = 0;
 			av.assoc_value = fragpoint;
-			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_MAXSEG, &av, sizeof(struct sctp_assoc_value)) < 0) {
-				perror("setsockopt: SCTP_MAXSEG");
+			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, USR_SCTP_MAXSEG, &av, sizeof(struct usrsctp_assoc_value)) < 0) {
+				perror("setsockopt: USR_SCTP_MAXSEG");
 			}
 		}
 

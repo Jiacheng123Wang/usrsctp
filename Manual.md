@@ -124,7 +124,7 @@ usrsctp_socket(int domain,
                                  union sctp_sockstore addr,
                                  void *data,
                                  size_t datalen,
-                                 struct sctp_rcvinfo,
+                                 struct usrsctp_rcvinfo,
                                  int flags,
                                  void *ulp_info),
                int (*send_cb)(struct socket *sock,
@@ -261,13 +261,13 @@ usrsctp_sendv(struct socket *so,
 * len: Length of the data.
 * addrs: In this version of usrsctp at most one destination address is supported. In the case of a connected socket, the parameter `addrs` can be set to NULL.
 * addrcnt: Number of addresses. As at most one address is supported, addrcnt is 0 if addrs is NULL and 1 otherwise.
-* info: Additional information for a message is stored in `void *info`. The data types `struct sctp_sndinfo`, `struct sctp_prinfo`, and `struct sctp_sendv_spa` are supported as defined in [RFC 6458](https://tools.ietf.org/html/rfc6458). Support for `struct sctp_authinfo` is not implemented yet, therefore, errno is set EINVAL and -1 will be returned, if it is used.
+* info: Additional information for a message is stored in `void *info`. The data types `struct usrsctp_sndinfo`, `struct usrsctp_prinfo`, and `struct usrsctp_sendv_spa` are supported as defined in [RFC 6458](https://tools.ietf.org/html/rfc6458). Support for `struct usrsctp_authinfo` is not implemented yet, therefore, errno is set EINVAL and -1 will be returned, if it is used.
 * infolen: Length of info in bytes.
 * infotype: Identifies the type of the information provided in info. Possible values are
-  * SCTP_SENDV_NOINFO
-  * SCTP_SENDV_SNDINFO
-  * SCTP_SENDV_PRINFO
-  * SCTP_SENDV_SPA (For additional information please refer to [RFC 6458](https://tools.ietf.org/html/rfc6458).)
+  * USR_SCTP_SENDV_NOINFO
+  * USR_SCTP_SENDV_SNDINFO
+  * USR_SCTP_SENDV_PRINFO
+  * USR_SCTP_SENDV_SPA (For additional information please refer to [RFC 6458](https://tools.ietf.org/html/rfc6458).)
 * flags: Flags as described in [RFC 6458](https://tools.ietf.org/html/rfc6458).
 
 `usrsctp_sendv()` returns the number of bytes sent, or -1 if an error occurred.  The variable errno is then set appropriately.
@@ -295,11 +295,11 @@ usrsctp_recvv(struct socket *so,
 * info: A pointer to the buffer to hold the attributes of the received message.  The structure type of info is determined by the infotype parameter. The attributes returned in `info` have to be handled in the same way as specified in [RFC 6458](https://tools.ietf.org/html/rfc6458).
 * infolen:  An in/out parameter describing the size of the info buffer.
 * infotype:  On return, `*infotype` is set to the type of the info buffer.  The current defined values are
-  * SCTP_RECVV_NOINFO
-  * SCTP_RECVV_RCVINFO
-  * SCTP_RECVV_NXTINFO
-  * SCTP_RECVV_RN (A detailed description is given in [RFC 6458](https://tools.ietf.org/html/rfc6458))
-* flags: A pointer to an integer to be filled with any message flags (e.g., `MSG_NOTIFICATION`).  Note that this field is an in/out parameter.  Options for the receive may also be passed into the value (e.g., `MSG_EOR`).  Returning from the call, the flags' value will differ from its original value.
+  * USR_SCTP_RECVV_NOINFO
+  * USR_SCTP_RECVV_RCVINFO
+  * USR_SCTP_RECVV_NXTINFO
+  * USR_SCTP_RECVV_RN (A detailed description is given in [RFC 6458](https://tools.ietf.org/html/rfc6458))
+* flags: A pointer to an integer to be filled with any message flags (e.g., `USR_MSG_NOTIFICATION`).  Note that this field is an in/out parameter.  Options for the receive may also be passed into the value (e.g., `MSG_EOR`).  Returning from the call, the flags' value will differ from its original value.
 
 `usrsctp_recvv()` returns the number of bytes received, or -1 if an error occurred.  The variable errno is then set appropriately.
 
@@ -338,43 +338,43 @@ These functions return 0 on success and -1 in case of an error.
 
 Option | Datatype | r/w
 ------ | -------- | ----
-SCTP_RTOINFO | struct sctp_rtoinfo | r/w
-SCTP_ASSOCINFO | struct sctp_assocparams | r/w
-SCTP_INITMSG | struct sctp_initmsg | r/w
-SCTP_NODELAY | int | r/w
-SCTP_AUTOCLOSE | int | r/w
-SCTP_PRIMARY_ADDR | struct sctp_setprim | r/w
-SCTP_ADAPTATION_LAYER | struct sctp_setadaptation | r/w
-SCTP_DISABLE_FRAGMENTS | int | r/w
-SCTP_PEER_ADDR_PARAMS | struct sctp_paddrparams | r/w
-SCTP_I_WANT_MAPPED_V4_ADDR | int | r/w
-SCTP_MAXSEG | struct sctp_assoc_value | r/w
-SCTP_DELAYED_SACK | struct sctp_sack_info | r/w
-SCTP_FRAGMENT_INTERLEAVE | int | r/w
-SCTP_PARTIAL_DELIVERY_POINT | int | r/w
-SCTP_HMAC_IDENT | struct sctp_hmacalgo | r/w
-SCTP_AUTH_ACTIVE_KEY | struct sctp_authkeyid | r/w
-SCTP_AUTO_ASCONF | int | r/w
-SCTP_MAX_BURST | struct sctp_assoc_value | r/w
-SCTP_CONTEXT | struct sctp_assoc_value | r/w
-SCTP_EXPLICIT_EOR | int | r/w
-SCTP_REUSE_PORT | int | r/w
-SCTP_EVENT | struct sctp_event | r/w
-SCTP_RECVRCVINFO | int | r/w
-SCTP_RECVNXTINFO | int | r/w
-SCTP_DEFAULT_SNDINFO | struct sctp_sndinfo | r/w
-SCTP_DEFAULT_PRINFO | struct sctp_default_prinfo | r/w
-SCTP_REMOTE_UDP_ENCAPS_PORT | struct sctp_udpencaps | r/w
-SCTP_ENABLE_STREAM_RESET | struct sctp_assoc_value | r/w
-SCTP_STATUS | struct sctp_status | r
-SCTP_GET_PEER_ADDR_INFO | struct sctp_paddrinfo | r
-SCTP_PEER_AUTH_CHUNKS | struct sctp_authchunks | r
-SCTP_LOCAL_AUTH_CHUNKS | struct sctp_authchunks | r
-SCTP_GET_ASSOC_NUMBER | uint32_t | r
-SCTP_GET_ASSOC_ID_LIST | struct sctp_assoc_ids | r
-SCTP_RESET_STREAMS | struct sctp_reset_streams | w
-SCTP_RESET_ASSOC | struct sctp_assoc_t | w
-SCTP_ADD_STREAMS | struct sctp_add_streams | w
+USR_SCTP_RTOINFO | struct usrsctp_rtoinfo | r/w
+USR_SCTP_ASSOCINFO | struct usrsctp_assocparams | r/w
+USR_SCTP_INITMSG | struct usrsctp_initmsg | r/w
+USR_SCTP_NODELAY | int | r/w
+USR_SCTP_AUTOCLOSE | int | r/w
+USR_SCTP_PRIMARY_ADDR | struct usrsctp_setprim | r/w
+USR_SCTP_ADAPTATION_LAYER | struct usrsctp_setadaptation | r/w
+USR_SCTP_DISABLE_FRAGMENTS | int | r/w
+USR_SCTP_PEER_ADDR_PARAMS | struct usrsctp_paddrparams | r/w
+USR_SCTP_I_WANT_MAPPED_V4_ADDR | int | r/w
+USR_SCTP_MAXSEG | struct usrsctp_assoc_value | r/w
+USR_SCTP_DELAYED_SACK | struct usrsctp_sack_info | r/w
+USR_SCTP_FRAGMENT_INTERLEAVE | int | r/w
+USR_SCTP_PARTIAL_DELIVERY_POINT | int | r/w
+USR_SCTP_HMAC_IDENT | struct usrsctp_hmacalgo | r/w
+USR_SCTP_AUTH_ACTIVE_KEY | struct usrsctp_authkeyid | r/w
+USR_SCTP_AUTO_ASCONF | int | r/w
+USR_SCTP_MAX_BURST | struct usrsctp_assoc_value | r/w
+USR_SCTP_CONTEXT | struct usrsctp_assoc_value | r/w
+USR_SCTP_EXPLICIT_EOR | int | r/w
+USR_SCTP_REUSE_PORT | int | r/w
+USR_SCTP_EVENT | struct usrsctp_event | r/w
+USR_SCTP_RECVRCVINFO | int | r/w
+USR_SCTP_RECVNXTINFO | int | r/w
+USR_SCTP_DEFAULT_SNDINFO | struct usrsctp_sndinfo | r/w
+USR_SCTP_DEFAULT_PRINFO | struct usrsctp_default_prinfo | r/w
+USR_SCTP_REMOTE_UDP_ENCAPS_PORT | struct usrsctp_udpencaps | r/w
+SCTP_ENABLE_STREAM_RESET | struct usrsctp_assoc_value | r/w
+USR_SCTP_STATUS | struct usrsctp_status | r
+USR_SCTP_GET_PEER_ADDR_INFO | struct usrsctp_paddrinfo | r
+USR_SCTP_PEER_AUTH_CHUNKS | struct usrsctp_authchunks | r
+USR_SCTP_LOCAL_AUTH_CHUNKS | struct usrsctp_authchunks | r
+USR_SCTP_GET_ASSOC_NUMBER | uint32_t | r
+USR_SCTP_GET_ASSOC_ID_LIST | struct usrsctp_assoc_ids | r
+USR_SCTP_RESET_STREAMS | struct usrsctp_reset_streams | w
+USR_SCTP_RESET_ASSOC | struct usrsctp_assoc_t | w
+USR_SCTP_ADD_STREAMS | struct usrsctp_add_streams | w
 
 Further usage details are described in [RFC 6458](https://tools.ietf.org/html/rfc6458), [RFC 6525](https://tools.ietf.org/html/rfc6525), and [RFC 6951](https://tools.ietf.org/html/rfc6951).
 
@@ -648,12 +648,12 @@ Enforce strict data ordering, abort if control inside data. Default: 0
 
 #### usrsctp_sysctl_set_sctp_default_ss_module()
 Set the default stream scheduling module. Implemented modules are:
-* SCTP_SS_DEFAULT
-* SCTP_SS_ROUND_ROBIN
-* SCTP_SS_ROUND_ROBIN_PACKET
-* SCTP_SS_PRIORITY
-* SCTP_SS_FAIR_BANDWITH
-* SCTP_SS_FIRST_COME
+* USR_SCTP_SS_DEFAULT
+* USR_SCTP_SS_ROUND_ROBIN
+* USR_SCTP_SS_ROUND_ROBIN_PACKET
+* USR_SCTP_SS_PRIORITY
+* USR_SCTP_SS_FAIR_BANDWITH
+* USR_SCTP_SS_FIRST_COME
 
 #### usrsctp_sysctl_set_sctp_default_frag_interleave()
 TBD

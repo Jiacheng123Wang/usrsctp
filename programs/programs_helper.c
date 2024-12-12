@@ -163,7 +163,7 @@ debug_printf_stack(const char *format, ...)
 }
 
 static void
-handle_association_change_event(struct sctp_assoc_change *sac)
+handle_association_change_event(struct usrsctp_assoc_change *sac)
 {
 	unsigned int i, n;
 
@@ -173,20 +173,20 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 
 	fprintf(debug_target, "Association change ");
 	switch (sac->sac_state) {
-	case SCTP_COMM_UP:
-		fprintf(debug_target, "SCTP_COMM_UP");
+	case USR_SCTP_COMM_UP:
+		fprintf(debug_target, "USR_SCTP_COMM_UP");
 		break;
-	case SCTP_COMM_LOST:
-		fprintf(debug_target, "SCTP_COMM_LOST");
+	case USR_SCTP_COMM_LOST:
+		fprintf(debug_target, "USR_SCTP_COMM_LOST");
 		break;
-	case SCTP_RESTART:
-		fprintf(debug_target, "SCTP_RESTART");
+	case USR_SCTP_RESTART:
+		fprintf(debug_target, "USR_SCTP_RESTART");
 		break;
-	case SCTP_SHUTDOWN_COMP:
-		fprintf(debug_target, "SCTP_SHUTDOWN_COMP");
+	case USR_SCTP_SHUTDOWN_COMP:
+		fprintf(debug_target, "USR_SCTP_SHUTDOWN_COMP");
 		break;
-	case SCTP_CANT_STR_ASSOC:
-		fprintf(debug_target, "SCTP_CANT_STR_ASSOC");
+	case USR_SCTP_CANT_STR_ASSOC:
+		fprintf(debug_target, "USR_SCTP_CANT_STR_ASSOC");
 		break;
 	default:
 		fprintf(debug_target, "UNKNOWN");
@@ -194,28 +194,28 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 	}
 	fprintf(debug_target, ", streams (in/out) = (%u/%u)",
 	       sac->sac_inbound_streams, sac->sac_outbound_streams);
-	n = sac->sac_length - sizeof(struct sctp_assoc_change);
-	if (((sac->sac_state == SCTP_COMM_UP) ||
-	     (sac->sac_state == SCTP_RESTART)) && (n > 0)) {
+	n = sac->sac_length - sizeof(struct usrsctp_assoc_change);
+	if (((sac->sac_state == USR_SCTP_COMM_UP) ||
+	     (sac->sac_state == USR_SCTP_RESTART)) && (n > 0)) {
 		fprintf(debug_target, ", supports");
 		for (i = 0; i < n; i++) {
 			switch (sac->sac_info[i]) {
-			case SCTP_ASSOC_SUPPORTS_PR:
+			case USR_SCTP_ASSOC_SUPPORTS_PR:
 				fprintf(debug_target, " PR");
 				break;
-			case SCTP_ASSOC_SUPPORTS_AUTH:
+			case USR_SCTP_ASSOC_SUPPORTS_AUTH:
 				fprintf(debug_target, " AUTH");
 				break;
-			case SCTP_ASSOC_SUPPORTS_ASCONF:
+			case USR_SCTP_ASSOC_SUPPORTS_ASCONF:
 				fprintf(debug_target, " ASCONF");
 				break;
-			case SCTP_ASSOC_SUPPORTS_MULTIBUF:
+			case USR_SCTP_ASSOC_SUPPORTS_MULTIBUF:
 				fprintf(debug_target, " MULTIBUF");
 				break;
-			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
+			case USR_SCTP_ASSOC_SUPPORTS_RE_CONFIG:
 				fprintf(debug_target, " RE-CONFIG");
 				break;
-			case SCTP_ASSOC_SUPPORTS_INTERLEAVING:
+			case USR_SCTP_ASSOC_SUPPORTS_INTERLEAVING:
 				fprintf(debug_target, " INTERLEAVING");
 				break;
 			default:
@@ -223,8 +223,8 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 				break;
 			}
 		}
-	} else if (((sac->sac_state == SCTP_COMM_LOST) ||
-	            (sac->sac_state == SCTP_CANT_STR_ASSOC)) && (n > 0)) {
+	} else if (((sac->sac_state == USR_SCTP_COMM_LOST) ||
+	            (sac->sac_state == USR_SCTP_CANT_STR_ASSOC)) && (n > 0)) {
 		fprintf(debug_target, ", ABORT =");
 		for (i = 0; i < n; i++) {
 			fprintf(debug_target, " 0x%02x", sac->sac_info[i]);
@@ -235,7 +235,7 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 }
 
 static void
-handle_peer_address_change_event(struct sctp_paddr_change *spc)
+handle_peer_address_change_event(struct usrsctp_paddr_change *spc)
 {
 	char addr_buf[INET6_ADDRSTRLEN];
 	const char *addr;
@@ -280,23 +280,23 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 	}
 	fprintf(debug_target, "Peer address %s is now ", addr);
 	switch (spc->spc_state) {
-	case SCTP_ADDR_AVAILABLE:
-		fprintf(debug_target, "SCTP_ADDR_AVAILABLE");
+	case USR_SCTP_ADDR_AVAILABLE:
+		fprintf(debug_target, "USR_SCTP_ADDR_AVAILABLE");
 		break;
-	case SCTP_ADDR_UNREACHABLE:
-		fprintf(debug_target, "SCTP_ADDR_UNREACHABLE");
+	case USR_SCTP_ADDR_UNREACHABLE:
+		fprintf(debug_target, "USR_SCTP_ADDR_UNREACHABLE");
 		break;
-	case SCTP_ADDR_REMOVED:
-		fprintf(debug_target, "SCTP_ADDR_REMOVED");
+	case USR_SCTP_ADDR_REMOVED:
+		fprintf(debug_target, "USR_SCTP_ADDR_REMOVED");
 		break;
-	case SCTP_ADDR_ADDED:
-		fprintf(debug_target, "SCTP_ADDR_ADDED");
+	case USR_SCTP_ADDR_ADDED:
+		fprintf(debug_target, "USR_SCTP_ADDR_ADDED");
 		break;
-	case SCTP_ADDR_MADE_PRIM:
-		fprintf(debug_target, "SCTP_ADDR_MADE_PRIM");
+	case USR_SCTP_ADDR_MADE_PRIM:
+		fprintf(debug_target, "USR_SCTP_ADDR_MADE_PRIM");
 		break;
-	case SCTP_ADDR_CONFIRMED:
-		fprintf(debug_target, "SCTP_ADDR_CONFIRMED");
+	case USR_SCTP_ADDR_CONFIRMED:
+		fprintf(debug_target, "USR_SCTP_ADDR_CONFIRMED");
 		break;
 	default:
 		fprintf(debug_target, "UNKNOWN");
@@ -307,7 +307,7 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 }
 
 static void
-handle_send_failed_event(struct sctp_send_failed_event *ssfe)
+handle_send_failed_event(struct usrsctp_send_failed_event *ssfe)
 {
 	size_t i, n;
 
@@ -315,19 +315,19 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 		debug_target = DEFAULT_TARGET;
 	}
 
-	if (ssfe->ssfe_flags & SCTP_DATA_UNSENT) {
+	if (ssfe->ssfe_flags & USR_SCTP_DATA_UNSENT) {
 		fprintf(debug_target, "Unsent ");
 	}
-	if (ssfe->ssfe_flags & SCTP_DATA_SENT) {
+	if (ssfe->ssfe_flags & USR_SCTP_DATA_SENT) {
 		fprintf(debug_target, "Sent ");
 	}
-	if (ssfe->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
+	if (ssfe->ssfe_flags & ~(USR_SCTP_DATA_SENT | USR_SCTP_DATA_UNSENT)) {
 		fprintf(debug_target, "(flags = %x) ", ssfe->ssfe_flags);
 	}
 	fprintf(debug_target, "message with PPID = %u, SID = %u, flags: 0x%04x due to error = 0x%08x",
 	       (uint32_t)ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
-	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
+	n = ssfe->ssfe_length - sizeof(struct usrsctp_send_failed_event);
 	for (i = 0; i < n; i++) {
 		fprintf(debug_target, " 0x%02x", ssfe->ssfe_data[i]);
 	}
@@ -336,7 +336,7 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 }
 
 static void
-handle_adaptation_indication(struct sctp_adaptation_event *sai)
+handle_adaptation_indication(struct usrsctp_adaptation_event *sai)
 {
 	if (debug_target == NULL) {
 		debug_target = DEFAULT_TARGET;
@@ -347,7 +347,7 @@ handle_adaptation_indication(struct sctp_adaptation_event *sai)
 }
 
 static void
-handle_shutdown_event(struct sctp_shutdown_event *sse)
+handle_shutdown_event(struct usrsctp_shutdown_event *sse)
 {
 	if (debug_target == NULL) {
 		debug_target = DEFAULT_TARGET;
@@ -359,7 +359,7 @@ handle_shutdown_event(struct sctp_shutdown_event *sse)
 }
 
 static void
-handle_stream_reset_event(struct sctp_stream_reset_event *strrst)
+handle_stream_reset_event(struct usrsctp_stream_reset_event *strrst)
 {
 	uint32_t n, i;
 
@@ -367,15 +367,15 @@ handle_stream_reset_event(struct sctp_stream_reset_event *strrst)
 		debug_target = DEFAULT_TARGET;
 	}
 
-	n = (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) / sizeof(uint16_t);
+	n = (strrst->strreset_length - sizeof(struct usrsctp_stream_reset_event)) / sizeof(uint16_t);
 	fprintf(debug_target, "Stream reset event: flags = %x, ", strrst->strreset_flags);
-	if (strrst->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
-		if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+	if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_INCOMING_SSN) {
+		if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_OUTGOING_SSN) {
 			fprintf(debug_target, "incoming/");
 		}
 		fprintf(debug_target, "incoming ");
 	}
-	if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+	if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_OUTGOING_SSN) {
 		fprintf(debug_target, "outgoing ");
 	}
 	fprintf(debug_target, "stream ids = ");
@@ -390,7 +390,7 @@ handle_stream_reset_event(struct sctp_stream_reset_event *strrst)
 }
 
 static void
-handle_stream_change_event(struct sctp_stream_change_event *strchg)
+handle_stream_change_event(struct usrsctp_stream_change_event *strchg)
 {
 	if (debug_target == NULL) {
 		debug_target = DEFAULT_TARGET;
@@ -402,7 +402,7 @@ handle_stream_change_event(struct sctp_stream_change_event *strchg)
 }
 
 static void
-handle_remote_error_event(struct sctp_remote_error *sre)
+handle_remote_error_event(struct usrsctp_remote_error *sre)
 {
 	size_t i, n;
 
@@ -410,7 +410,7 @@ handle_remote_error_event(struct sctp_remote_error *sre)
 		debug_target = DEFAULT_TARGET;
 	}
 
-	n = sre->sre_length - sizeof(struct sctp_remote_error);
+	n = sre->sre_length - sizeof(struct usrsctp_remote_error);
 	fprintf(debug_target, "Remote Error (error = 0x%04x): ", sre->sre_error);
 	for (i = 0; i < n; i++) {
 		fprintf(debug_target, " 0x%02x", sre-> sre_data[i]);
@@ -420,7 +420,7 @@ handle_remote_error_event(struct sctp_remote_error *sre)
 }
 
 void
-handle_notification(union sctp_notification *notif, size_t n)
+handle_notification(union usrsctp_notification *notif, size_t n)
 {
 	if (notif->sn_header.sn_length != (uint32_t)n) {
 		return;
@@ -433,51 +433,51 @@ handle_notification(union sctp_notification *notif, size_t n)
 	fprintf(debug_target, "handle_notification : ");
 
 	switch (notif->sn_header.sn_type) {
-	case SCTP_ASSOC_CHANGE:
-		fprintf(debug_target, "SCTP_ASSOC_CHANGE\n");
+	case USR_SCTP_ASSOC_CHANGE:
+		fprintf(debug_target, "USR_SCTP_ASSOC_CHANGE\n");
 		handle_association_change_event(&(notif->sn_assoc_change));
 		break;
-	case SCTP_PEER_ADDR_CHANGE:
-		fprintf(debug_target, "SCTP_PEER_ADDR_CHANGE\n");
+	case USR_SCTP_PEER_ADDR_CHANGE:
+		fprintf(debug_target, "USR_SCTP_PEER_ADDR_CHANGE\n");
 		handle_peer_address_change_event(&(notif->sn_paddr_change));
 		break;
-	case SCTP_REMOTE_ERROR:
-		fprintf(debug_target, "SCTP_REMOTE_ERROR\n");
+	case USR_SCTP_REMOTE_ERROR:
+		fprintf(debug_target, "USR_SCTP_REMOTE_ERROR\n");
 		handle_remote_error_event(&(notif->sn_remote_error));
 		break;
-	case SCTP_SHUTDOWN_EVENT:
-		fprintf(debug_target, "SCTP_SHUTDOWN_EVENT\n");
+	case USR_SCTP_SHUTDOWN_EVENT:
+		fprintf(debug_target, "USR_SCTP_SHUTDOWN_EVENT\n");
 		handle_shutdown_event(&(notif->sn_shutdown_event));
 		break;
-	case SCTP_ADAPTATION_INDICATION:
-		fprintf(debug_target, "SCTP_ADAPTATION_INDICATION\n");
+	case USR_SCTP_ADAPTATION_INDICATION:
+		fprintf(debug_target, "USR_SCTP_ADAPTATION_INDICATION\n");
 		handle_adaptation_indication(&(notif->sn_adaptation_event));
 		break;
-	case SCTP_PARTIAL_DELIVERY_EVENT:
-		fprintf(debug_target, "SCTP_PARTIAL_DELIVERY_EVENT\n");
+	case USR_SCTP_PARTIAL_DELIVERY_EVENT:
+		fprintf(debug_target, "USR_SCTP_PARTIAL_DELIVERY_EVENT\n");
 		break;
-	case SCTP_AUTHENTICATION_EVENT:
-		fprintf(debug_target, "SCTP_AUTHENTICATION_EVENT\n");
+	case USR_SCTP_AUTHENTICATION_EVENT:
+		fprintf(debug_target, "USR_SCTP_AUTHENTICATION_EVENT\n");
 		break;
-	case SCTP_SENDER_DRY_EVENT:
-		fprintf(debug_target, "SCTP_SENDER_DRY_EVENT\n");
+	case USR_SCTP_SENDER_DRY_EVENT:
+		fprintf(debug_target, "USR_SCTP_SENDER_DRY_EVENT\n");
 		break;
-	case SCTP_NOTIFICATIONS_STOPPED_EVENT:
-		fprintf(debug_target, "SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
+	case USR_SCTP_NOTIFICATIONS_STOPPED_EVENT:
+		fprintf(debug_target, "USR_SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
 		break;
-	case SCTP_SEND_FAILED_EVENT:
-		fprintf(debug_target, "SCTP_SEND_FAILED_EVENT\n");
+	case USR_SCTP_SEND_FAILED_EVENT:
+		fprintf(debug_target, "USR_SCTP_SEND_FAILED_EVENT\n");
 		handle_send_failed_event(&(notif->sn_send_failed_event));
 		break;
-	case SCTP_STREAM_RESET_EVENT:
-		fprintf(debug_target, "SCTP_STREAM_RESET_EVENT\n");
+	case USR_SCTP_STREAM_RESET_EVENT:
+		fprintf(debug_target, "USR_SCTP_STREAM_RESET_EVENT\n");
 		handle_stream_reset_event(&(notif->sn_strreset_event));
 		break;
-	case SCTP_ASSOC_RESET_EVENT:
-		fprintf(debug_target, "SCTP_ASSOC_RESET_EVENT\n");
+	case USR_SCTP_ASSOC_RESET_EVENT:
+		fprintf(debug_target, "USR_SCTP_ASSOC_RESET_EVENT\n");
 		break;
-	case SCTP_STREAM_CHANGE_EVENT:
-		fprintf(debug_target, "SCTP_STREAM_CHANGE_EVENT\n");
+	case USR_SCTP_STREAM_CHANGE_EVENT:
+		fprintf(debug_target, "USR_SCTP_STREAM_CHANGE_EVENT\n");
 		handle_stream_change_event(&(notif->sn_strchange_event));
 		break;
 	default:

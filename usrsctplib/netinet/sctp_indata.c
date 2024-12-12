@@ -173,8 +173,8 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 {
 	struct sctp_extrcvinfo *seinfo;
 	struct sctp_sndrcvinfo *outinfo;
-	struct sctp_rcvinfo *rcvinfo;
-	struct sctp_nxtinfo *nxtinfo;
+	struct usrsctp_rcvinfo *rcvinfo;
+	struct usrsctp_nxtinfo *nxtinfo;
 #if defined(_WIN32)
 	WSACMSGHDR *cmh;
 #else
@@ -194,13 +194,13 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 
 	len = 0;
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO)) {
-		len += CMSG_SPACE(sizeof(struct sctp_rcvinfo));
+		len += CMSG_SPACE(sizeof(struct usrsctp_rcvinfo));
 	}
 	seinfo = (struct sctp_extrcvinfo *)sinfo;
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO) &&
-	    (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_AVAIL)) {
+	    (seinfo->serinfo_next_flags & USR_SCTP_NEXT_MSG_AVAIL)) {
 		provide_nxt = 1;
-		len += CMSG_SPACE(sizeof(struct sctp_nxtinfo));
+		len += CMSG_SPACE(sizeof(struct usrsctp_nxtinfo));
 	} else {
 		provide_nxt = 0;
 	}
@@ -236,9 +236,9 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 	memset(cmh, 0, len);
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO)) {
 		cmh->cmsg_level = IPPROTO_SCTP;
-		cmh->cmsg_len = CMSG_LEN(sizeof(struct sctp_rcvinfo));
+		cmh->cmsg_len = CMSG_LEN(sizeof(struct usrsctp_rcvinfo));
 		cmh->cmsg_type = SCTP_RCVINFO;
-		rcvinfo = (struct sctp_rcvinfo *)CMSG_DATA(cmh);
+		rcvinfo = (struct usrsctp_rcvinfo *)CMSG_DATA(cmh);
 		rcvinfo->rcv_sid = sinfo->sinfo_stream;
 		rcvinfo->rcv_ssn = sinfo->sinfo_ssn;
 		rcvinfo->rcv_flags = sinfo->sinfo_flags;
@@ -248,37 +248,37 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 		rcvinfo->rcv_context = sinfo->sinfo_context;
 		rcvinfo->rcv_assoc_id = sinfo->sinfo_assoc_id;
 #if defined(_WIN32)
-		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_rcvinfo)));
+		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct usrsctp_rcvinfo)));
 #else
-		cmh = (struct cmsghdr *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_rcvinfo)));
+		cmh = (struct cmsghdr *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct usrsctp_rcvinfo)));
 #endif
-		SCTP_BUF_LEN(ret) += CMSG_SPACE(sizeof(struct sctp_rcvinfo));
+		SCTP_BUF_LEN(ret) += CMSG_SPACE(sizeof(struct usrsctp_rcvinfo));
 	}
 	if (provide_nxt) {
 		cmh->cmsg_level = IPPROTO_SCTP;
-		cmh->cmsg_len = CMSG_LEN(sizeof(struct sctp_nxtinfo));
+		cmh->cmsg_len = CMSG_LEN(sizeof(struct usrsctp_nxtinfo));
 		cmh->cmsg_type = SCTP_NXTINFO;
-		nxtinfo = (struct sctp_nxtinfo *)CMSG_DATA(cmh);
+		nxtinfo = (struct usrsctp_nxtinfo *)CMSG_DATA(cmh);
 		nxtinfo->nxt_sid = seinfo->serinfo_next_stream;
 		nxtinfo->nxt_flags = 0;
-		if (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_IS_UNORDERED) {
-			nxtinfo->nxt_flags |= SCTP_UNORDERED;
+		if (seinfo->serinfo_next_flags & USR_SCTP_NEXT_MSG_IS_UNORDERED) {
+			nxtinfo->nxt_flags |= USR_SCTP_UNORDERED;
 		}
-		if (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_IS_NOTIFICATION) {
-			nxtinfo->nxt_flags |= SCTP_NOTIFICATION;
+		if (seinfo->serinfo_next_flags & USR_SCTP_NEXT_MSG_IS_NOTIFICATION) {
+			nxtinfo->nxt_flags |= USR_SCTP_NOTIFICATION;
 		}
-		if (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_ISCOMPLETE) {
-			nxtinfo->nxt_flags |= SCTP_COMPLETE;
+		if (seinfo->serinfo_next_flags & USR_SCTP_NEXT_MSG_ISCOMPLETE) {
+			nxtinfo->nxt_flags |= USR_SCTP_COMPLETE;
 		}
 		nxtinfo->nxt_ppid = seinfo->serinfo_next_ppid;
 		nxtinfo->nxt_length = seinfo->serinfo_next_length;
 		nxtinfo->nxt_assoc_id = seinfo->serinfo_next_aid;
 #if defined(_WIN32)
-		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_nxtinfo)));
+		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct usrsctp_nxtinfo)));
 #else
-		cmh = (struct cmsghdr *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_nxtinfo)));
+		cmh = (struct cmsghdr *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct usrsctp_nxtinfo)));
 #endif
-		SCTP_BUF_LEN(ret) += CMSG_SPACE(sizeof(struct sctp_nxtinfo));
+		SCTP_BUF_LEN(ret) += CMSG_SPACE(sizeof(struct usrsctp_nxtinfo));
 	}
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVDATAIOEVNT)) {
 		cmh->cmsg_level = IPPROTO_SCTP;
@@ -367,7 +367,7 @@ sctp_place_control_in_stream(struct sctp_stream_in *strm,
 	} else {
 		q = &strm->inqueue;
 	}
-	if ((flags & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
+	if ((flags & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG) {
 		control->end_added = 1;
 		control->first_frag_seen = 1;
 		control->last_frag_seen = 1;
@@ -594,7 +594,7 @@ sctp_queue_data_to_stream(struct sctp_tcb *stcb,
 			/* all delivered */
 			nxt_todel = strm->last_mid_delivered + 1;
 			if (SCTP_MID_EQ(asoc->idata_supported, nxt_todel, control->mid) &&
-			    (((control->sinfo_flags >> 8) & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG)) {
+			    (((control->sinfo_flags >> 8) & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG)) {
 				if (control->on_strm_q == SCTP_ON_ORDERED) {
 					TAILQ_REMOVE(&strm->inqueue, control, next_instrm);
 					if (asoc->size_on_all_streams >= control->length) {
@@ -1239,7 +1239,7 @@ deliver_more:
 				}
 				ret++;
 			}
-			if (((control->sinfo_flags >> 8) & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
+			if (((control->sinfo_flags >> 8) & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG) {
 				/* A singleton now slipping through - mark it non-revokable too */
 				sctp_mark_non_revokable(asoc, control->sinfo_tsn);
 			} else if (control->end_added == 0) {
@@ -1320,7 +1320,7 @@ sctp_add_chk_to_control(struct sctp_queued_to_read *control,
 		control->sinfo_tsn = chk->rec.data.tsn;
 		control->sinfo_ppid = chk->rec.data.ppid;
 	}
-	if (chk->rec.data.rcv_flags & SCTP_DATA_LAST_FRAG) {
+	if (chk->rec.data.rcv_flags & USR_SCTP_DATA_LAST_FRAG) {
 		/* Its complete */
 		if ((control->on_strm_q) && (control->on_read_q)) {
 			if (control->pdapi_started) {
@@ -1462,7 +1462,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					chk->rec.data.fsn);
 				control->top_fsn = chk->rec.data.fsn;
 			}
-			if (chk->rec.data.rcv_flags & SCTP_DATA_LAST_FRAG) {
+			if (chk->rec.data.rcv_flags & USR_SCTP_DATA_LAST_FRAG) {
 				SCTPDBG(SCTP_DEBUG_XXX,
 					"The last fsn is now in place fsn: %u\n",
 					chk->rec.data.fsn);
@@ -1494,7 +1494,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				}
 			}
 		} else {
-			if (chk->rec.data.rcv_flags & SCTP_DATA_LAST_FRAG) {
+			if (chk->rec.data.rcv_flags & USR_SCTP_DATA_LAST_FRAG) {
 				/* Second last? huh? */
 				SCTPDBG(SCTP_DEBUG_XXX,
 					"Duplicate last fsn: %u (top: %u) -- abort\n",
@@ -1545,7 +1545,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			chk->rec.data.fsn);
 		TAILQ_FOREACH(at, &control->reasm, sctp_next) {
 			if (SCTP_TSN_GT(at->rec.data.fsn, chk->rec.data.fsn)) {
-				if (chk->rec.data.rcv_flags & SCTP_DATA_LAST_FRAG) {
+				if (chk->rec.data.rcv_flags & USR_SCTP_DATA_LAST_FRAG) {
 					/* Last not at the end? huh? */
 					SCTPDBG(SCTP_DEBUG_XXX,
 					        "Last fragment not last in list: -- abort\n");
@@ -1867,7 +1867,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	control = sctp_find_reasm_entry(&asoc->strmin[sid], mid, ordered, asoc->idata_supported);
 	SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags:0x%x look for control on queues %p\n",
 		chk_flags, control);
-	if ((chk_flags & SCTP_DATA_NOT_FRAG) != SCTP_DATA_NOT_FRAG) {
+	if ((chk_flags & USR_SCTP_DATA_NOT_FRAG) != USR_SCTP_DATA_NOT_FRAG) {
 		/* See if we can find the re-assembly entity */
 		if (control != NULL) {
 			/* We found something, does it belong? */
@@ -1953,7 +1953,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 #endif
 		}
 		/* now is it in the mapping array of what we have accepted? */
-		if (chk_type == SCTP_DATA) {
+		if (chk_type == USR_SCTP_DATA) {
 			if (SCTP_TSN_GT(tsn, asoc->highest_tsn_inside_map) &&
 			    SCTP_TSN_GT(tsn, asoc->highest_tsn_inside_nr_map)) {
 				/* Nope not in the valid range dump it */
@@ -2096,7 +2096,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			SCTP_STAT_INCR(sctps_nomem);
 			return (0);
 		}
-		if ((chk_flags & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
+		if ((chk_flags & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG) {
 			struct mbuf *mm;
 
 			control->data = dmbuf;
@@ -2117,7 +2117,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	}
 	SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags: 0x%x ordered: %d MID: %u control: %p\n",
 		chk_flags, ordered, mid, control);
-	if ((chk_flags & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG &&
+	if ((chk_flags & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG &&
 	    TAILQ_EMPTY(&asoc->resetHead) &&
 	    ((ordered == 0) ||
 	     (SCTP_MID_EQ(asoc->idata_supported, asoc->strmin[sid].last_mid_delivered + 1, mid) &&
@@ -2155,7 +2155,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	}
 
 	/* Now will we need a chunk too? */
-	if ((chk_flags & SCTP_DATA_NOT_FRAG) != SCTP_DATA_NOT_FRAG) {
+	if ((chk_flags & USR_SCTP_DATA_NOT_FRAG) != USR_SCTP_DATA_NOT_FRAG) {
 		sctp_alloc_a_chunk(stcb, chk);
 		if (chk == NULL) {
 			/* No memory so we drop the chunk */
@@ -2197,7 +2197,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		}
 	}
 	/* Now is it complete (i.e. not fragmented)? */
-	if ((chk_flags & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
+	if ((chk_flags & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG) {
 		/*
 		 * Special check for when streams are resetting. We
 		 * could be more smart about this and check the
@@ -2735,7 +2735,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			continue;
 		}
 		if ((asoc->idata_supported == 1) &&
-		    (ch->chunk_type == SCTP_DATA)) {
+		    (ch->chunk_type == USR_SCTP_DATA)) {
 			struct mbuf *op_err;
 			char msg[SCTP_DIAG_INFO_LEN];
 
@@ -2756,11 +2756,11 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			sctp_abort_an_association(inp, stcb, op_err, false, SCTP_SO_NOT_LOCKED);
 			return (2);
 		}
-		if ((ch->chunk_type == SCTP_DATA) ||
+		if ((ch->chunk_type == USR_SCTP_DATA) ||
 		    (ch->chunk_type == SCTP_IDATA)) {
 			uint16_t clen;
 
-			if (ch->chunk_type == SCTP_DATA) {
+			if (ch->chunk_type == USR_SCTP_DATA) {
 				clen = sizeof(struct sctp_data_chunk);
 			} else {
 				clen = sizeof(struct sctp_idata_chunk);
@@ -2774,7 +2774,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 				char msg[SCTP_DIAG_INFO_LEN];
 
 				SCTP_SNPRINTF(msg, sizeof(msg), "%s chunk of length %u",
-				              ch->chunk_type == SCTP_DATA ? "DATA" : "I-DATA",
+				              ch->chunk_type == USR_SCTP_DATA ? "DATA" : "I-DATA",
 				              chk_length);
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_23;
@@ -2808,27 +2808,27 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 		} else {
 			/* not a data chunk in the data region */
 			switch (ch->chunk_type) {
-			case SCTP_INITIATION:
-			case SCTP_INITIATION_ACK:
-			case SCTP_SELECTIVE_ACK:
-			case SCTP_NR_SELECTIVE_ACK:
-			case SCTP_HEARTBEAT_REQUEST:
-			case SCTP_HEARTBEAT_ACK:
-			case SCTP_ABORT_ASSOCIATION:
-			case SCTP_SHUTDOWN:
-			case SCTP_SHUTDOWN_ACK:
-			case SCTP_OPERATION_ERROR:
-			case SCTP_COOKIE_ECHO:
-			case SCTP_COOKIE_ACK:
-			case SCTP_ECN_ECHO:
-			case SCTP_ECN_CWR:
-			case SCTP_SHUTDOWN_COMPLETE:
-			case SCTP_AUTHENTICATION:
-			case SCTP_ASCONF_ACK:
-			case SCTP_PACKET_DROPPED:
-			case SCTP_STREAM_RESET:
-			case SCTP_FORWARD_CUM_TSN:
-			case SCTP_ASCONF:
+			case USR_SCTP_INITIATION:
+			case USR_SCTP_INITIATION_ACK:
+			case USR_SCTP_SELECTIVE_ACK:
+			case USR_SCTP_NR_SELECTIVE_ACK:
+			case USR_SCTP_HEARTBEAT_REQUEST:
+			case USR_SCTP_HEARTBEAT_ACK:
+			case USR_SCTP_ABORT_ASSOCIATION:
+			case USR_SCTP_SHUTDOWN:
+			case USR_SCTP_SHUTDOWN_ACK:
+			case USR_SCTP_OPERATION_ERROR:
+			case USR_SCTP_COOKIE_ECHO:
+			case USR_SCTP_COOKIE_ACK:
+			case USR_SCTP_ECN_ECHO:
+			case USR_SCTP_ECN_CWR:
+			case USR_SCTP_SHUTDOWN_COMPLETE:
+			case USR_SCTP_AUTHENTICATION:
+			case USR_SCTP_ASCONF_ACK:
+			case USR_SCTP_PACKET_DROPPED:
+			case USR_SCTP_STREAM_RESET:
+			case USR_SCTP_FORWARD_CUM_TSN:
+			case USR_SCTP_ASCONF:
 			{
 				/*
 				 * Now, what do we do with KNOWN chunks that
@@ -5314,7 +5314,7 @@ sctp_kick_prsctp_reorder_queue(struct sctp_tcb *stcb,
 	TAILQ_FOREACH_SAFE(control, &strmin->inqueue, next_instrm, ncontrol) {
 		if (SCTP_MID_GE(asoc->idata_supported, mid, control->mid)) {
 			/* this is deliverable now */
-			if (((control->sinfo_flags >> 8) & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
+			if (((control->sinfo_flags >> 8) & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG) {
 				if (control->on_strm_q) {
 					if (control->on_strm_q == SCTP_ON_ORDERED) {
 						TAILQ_REMOVE(&strmin->inqueue, control, next_instrm);
@@ -5380,7 +5380,7 @@ sctp_kick_prsctp_reorder_queue(struct sctp_tcb *stcb,
 	mid = strmin->last_mid_delivered + 1;
 	TAILQ_FOREACH_SAFE(control, &strmin->inqueue, next_instrm, ncontrol) {
 		if (SCTP_MID_EQ(asoc->idata_supported, mid, control->mid)) {
-			if (((control->sinfo_flags >> 8) & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
+			if (((control->sinfo_flags >> 8) & USR_SCTP_DATA_NOT_FRAG) == USR_SCTP_DATA_NOT_FRAG) {
 				/* this is deliverable now */
 				if (control->on_strm_q) {
 					if (control->on_strm_q == SCTP_ON_ORDERED) {
@@ -5769,7 +5769,7 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 					control->on_strm_q = 0;
 					sctp_ulp_notify(SCTP_NOTIFY_PARTIAL_DELVIERY_INDICATION,
 					                stcb,
-					                SCTP_PARTIAL_DELIVERY_ABORTED,
+					                USR_SCTP_PARTIAL_DELIVERY_ABORTED,
 					                (void *)control,
 					                SCTP_SO_NOT_LOCKED);
 					break;

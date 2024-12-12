@@ -389,9 +389,9 @@ struct sctp_sysctl {
 
 /* cmt_on_off: CMT on/off flag */
 #define SCTPCTL_CMT_ON_OFF_DESC		"CMT settings"
-#define SCTPCTL_CMT_ON_OFF_MIN		SCTP_CMT_OFF
-#define SCTPCTL_CMT_ON_OFF_MAX		SCTP_CMT_MAX
-#define SCTPCTL_CMT_ON_OFF_DEFAULT	SCTP_CMT_OFF
+#define SCTPCTL_CMT_ON_OFF_MIN		USR_SCTP_CMT_OFF
+#define SCTPCTL_CMT_ON_OFF_MAX		USR_SCTP_CMT_MAX
+#define SCTPCTL_CMT_ON_OFF_DEFAULT	USR_SCTP_CMT_OFF
 
 /* cmt_use_dac: CMT DAC on/off flag */
 #define SCTPCTL_CMT_USE_DAC_DESC	"CMT DAC on/off flag"
@@ -561,8 +561,8 @@ struct sctp_sysctl {
 #define SCTPCTL_BLACKHOLE_MAX		2
 #define SCTPCTL_BLACKHOLE_DEFAULT	SCTPCTL_BLACKHOLE_MIN
 
-/* sendall_limit: Maximum message with SCTP_SENDALL */
-#define SCTPCTL_SENDALL_LIMIT_DESC	"Maximum size of a message send with SCTP_SENDALL"
+/* sendall_limit: Maximum message with USR_SCTP_SENDALL */
+#define SCTPCTL_SENDALL_LIMIT_DESC	"Maximum size of a message send with USR_SCTP_SENDALL"
 #define SCTPCTL_SENDALL_LIMIT_MIN	0
 #define SCTPCTL_SENDALL_LIMIT_MAX	0xFFFFFFFF
 #define SCTPCTL_SENDALL_LIMIT_DEFAULT	1432

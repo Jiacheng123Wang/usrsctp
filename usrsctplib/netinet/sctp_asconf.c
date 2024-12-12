@@ -688,7 +688,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 
 	/* fill in ASCONF-ACK header */
 	ack_cp = mtod(m_ack, struct sctp_asconf_ack_chunk *);
-	ack_cp->ch.chunk_type = SCTP_ASCONF_ACK;
+	ack_cp->ch.chunk_type = USR_SCTP_ASCONF_ACK;
 	ack_cp->ch.chunk_flags = 0;
 	ack_cp->serial_number = htonl(serial_num);
 	/* set initial lengths (eg. just an ASCONF-ACK), ntohx at the end! */
@@ -2649,7 +2649,7 @@ sctp_compose_asconf(struct sctp_tcb *stcb, int *retlen, int addr_locked)
 	ptr = mtod(m_asconf, caddr_t);	/* beginning of cluster */
 
 	/* fill in chunk header info */
-	acp->ch.chunk_type = SCTP_ASCONF;
+	acp->ch.chunk_type = USR_SCTP_ASCONF;
 	acp->ch.chunk_flags = 0;
 	acp->serial_number = htonl(stcb->asoc.asconf_seq_out);
 	stcb->asoc.asconf_seq_out++;

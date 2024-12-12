@@ -228,7 +228,7 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint32_t mtu, bool resend)
 			overhead += sctp_get_auth_chunk_len(asoc->peer_hmac_id);
 		}
 	} else {
-		if (sctp_auth_is_required_chunk(SCTP_DATA, asoc->peer_auth_chunks)) {
+		if (sctp_auth_is_required_chunk(USR_SCTP_DATA, asoc->peer_auth_chunks)) {
 			overhead += sctp_get_auth_chunk_len(asoc->peer_hmac_id);
 		}
 	}
@@ -446,7 +446,7 @@ void sctp_ctlinput(struct icmp *icmp)
 				 * initiate tag matches.
 				 */
 				ch = (struct sctp_init_chunk *)(sh + 1);
-				if ((ch->ch.chunk_type != SCTP_INITIATION) ||
+				if ((ch->ch.chunk_type != USR_SCTP_INITIATION) ||
 				    (ntohl(ch->init.initiate_tag) != stcb->asoc.my_vtag)) {
 					SCTP_TCB_UNLOCK(stcb);
 					return;
@@ -1212,7 +1212,7 @@ sctp_disconnect(struct socket *so)
 		 * so set SHUTDOWN_PENDING
 		 */
 		/*
-		 * XXX sockets draft says that SCTP_EOF
+		 * XXX sockets draft says that USR_SCTP_EOF
 		 * should be sent with no data. currently,
 		 * we will allow user data to be sent first
 		 * and move to SHUTDOWN-PENDING
@@ -1995,7 +1995,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	struct sockaddr *sa;
 	unsigned int num_v6 = 0, num_v4 = 0, *totaddrp, totaddr;
 	uint32_t vrf_id;
-	sctp_assoc_t *a_id;
+	usrsctp_assoc_t *a_id;
 
 	SCTPDBG(SCTP_DEBUG_PCB1, "Connectx called\n");
 
@@ -2110,7 +2110,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	if (error) {
 		goto out_now;
 	}
-	a_id = (sctp_assoc_t *)optval;
+	a_id = (usrsctp_assoc_t *)optval;
 	*a_id = sctp_get_associd(stcb);
 
 	if (delay) {
@@ -2139,7 +2139,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 			SCTP_TCB_LOCK(stcb); \
 		} \
 		SCTP_INP_RUNLOCK(inp); \
-	} else if (assoc_id > SCTP_ALL_ASSOC) { \
+	} else if (assoc_id > USR_SCTP_ALL_ASSOC) { \
 		stcb = sctp_findassociation_ep_asocid(inp, assoc_id, 1); \
 		if (stcb == NULL) { \
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT); \
@@ -2185,22 +2185,22 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	error = 0;
 
 	switch (optname) {
-	case SCTP_NODELAY:
-	case SCTP_AUTOCLOSE:
-	case SCTP_EXPLICIT_EOR:
-	case SCTP_AUTO_ASCONF:
-	case SCTP_DISABLE_FRAGMENTS:
-	case SCTP_I_WANT_MAPPED_V4_ADDR:
+	case USR_SCTP_NODELAY:
+	case USR_SCTP_AUTOCLOSE:
+	case USR_SCTP_EXPLICIT_EOR:
+	case USR_SCTP_AUTO_ASCONF:
+	case USR_SCTP_DISABLE_FRAGMENTS:
+	case USR_SCTP_I_WANT_MAPPED_V4_ADDR:
 	case SCTP_USE_EXT_RCVINFO:
 		SCTP_INP_RLOCK(inp);
 		switch (optname) {
-		case SCTP_DISABLE_FRAGMENTS:
+		case USR_SCTP_DISABLE_FRAGMENTS:
 			val = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NO_FRAGMENT);
 			break;
-		case SCTP_I_WANT_MAPPED_V4_ADDR:
+		case USR_SCTP_I_WANT_MAPPED_V4_ADDR:
 			val = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NEEDS_MAPPED_V4);
 			break;
-		case SCTP_AUTO_ASCONF:
+		case USR_SCTP_AUTO_ASCONF:
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) {
 				/* only valid for bound all sockets */
 				val = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_AUTO_ASCONF);
@@ -2210,16 +2210,16 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				goto flags_out;
 			}
 			break;
-		case SCTP_EXPLICIT_EOR:
+		case USR_SCTP_EXPLICIT_EOR:
 			val = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR);
 			break;
-		case SCTP_NODELAY:
+		case USR_SCTP_NODELAY:
 			val = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NODELAY);
 			break;
 		case SCTP_USE_EXT_RCVINFO:
 			val = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXT_RCVINFO);
 			break;
-		case SCTP_AUTOCLOSE:
+		case USR_SCTP_AUTOCLOSE:
 			if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_AUTOCLOSE))
 				val = sctp_ticks_to_secs(inp->sctp_ep.auto_close_time);
 			else
@@ -2257,7 +2257,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 #endif
 		break;
 	}
-	case SCTP_REUSE_PORT:
+	case USR_SCTP_REUSE_PORT:
 	{
 		uint32_t *value;
 
@@ -2271,7 +2271,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = sizeof(uint32_t);
 		break;
 	}
-	case SCTP_PARTIAL_DELIVERY_POINT:
+	case USR_SCTP_PARTIAL_DELIVERY_POINT:
 	{
 		uint32_t *value;
 
@@ -2280,7 +2280,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = sizeof(uint32_t);
 		break;
 	}
-	case SCTP_FRAGMENT_INTERLEAVE:
+	case USR_SCTP_FRAGMENT_INTERLEAVE:
 	{
 		uint32_t *value;
 
@@ -2299,9 +2299,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	}
 	case SCTP_INTERLEAVING_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -2311,7 +2311,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				if (inp->idata_supported) {
 					av->assoc_value = 1;
@@ -2325,15 +2325,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
 	case SCTP_CMT_ON_OFF:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 		if (stcb) {
 			av->assoc_value = stcb->asoc.sctp_cmt_on_off;
@@ -2342,7 +2342,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->sctp_cmt_on_off;
 				SCTP_INP_RUNLOCK(inp);
@@ -2352,15 +2352,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
 	case SCTP_PLUGGABLE_CC:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 		if (stcb) {
 			av->assoc_value = stcb->asoc.congestion_control_module;
@@ -2369,7 +2369,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->sctp_ep.sctp_default_cc_module;
 				SCTP_INP_RUNLOCK(inp);
@@ -2379,7 +2379,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
@@ -2404,9 +2404,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	}
 	case SCTP_STREAM_SCHEDULER:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 		if (stcb) {
 			av->assoc_value = stcb->asoc.stream_scheduling_module;
@@ -2415,7 +2415,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->sctp_ep.sctp_default_ss_module;
 				SCTP_INP_RUNLOCK(inp);
@@ -2425,15 +2425,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
 	case SCTP_STREAM_SCHEDULER_VALUE:
 	{
-		struct sctp_stream_value *av;
+		struct usrsctp_stream_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_stream_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_stream_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 		if (stcb) {
 			if ((av->stream_id >= stcb->asoc.streamoutcnt) ||
@@ -2442,7 +2442,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 			} else {
-				*optsize = sizeof(struct sctp_stream_value);
+				*optsize = sizeof(struct usrsctp_stream_value);
 			}
 			SCTP_TCB_UNLOCK(stcb);
 		} else {
@@ -2454,9 +2454,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	}
 	case SCTP_GET_ADDR_LEN:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		error = EINVAL;
 #ifdef INET
 		if (av->assoc_value == AF_INET) {
@@ -2479,11 +2479,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if (error) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 		} else {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_GET_ASSOC_NUMBER:
+	case USR_SCTP_GET_ASSOC_NUMBER:
 	{
 		uint32_t *value, cnt;
 
@@ -2505,13 +2505,13 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = sizeof(uint32_t);
 		break;
 	}
-	case SCTP_GET_ASSOC_ID_LIST:
+	case USR_SCTP_GET_ASSOC_ID_LIST:
 	{
-		struct sctp_assoc_ids *ids;
+		struct usrsctp_assoc_ids *ids;
 		uint32_t at;
 		size_t limit;
 
-		SCTP_CHECK_AND_CAST(ids, optval, struct sctp_assoc_ids, *optsize);
+		SCTP_CHECK_AND_CAST(ids, optval, struct usrsctp_assoc_ids, *optsize);
 		SCTP_INP_RLOCK(inp);
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 		    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
@@ -2521,7 +2521,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			break;
 		}
 		at = 0;
-		limit = (*optsize - sizeof(uint32_t)) / sizeof(sctp_assoc_t);
+		limit = (*optsize - sizeof(uint32_t)) / sizeof(usrsctp_assoc_t);
 		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 			if (at < limit) {
 				ids->gaids_assoc_id[at++] = sctp_get_associd(stcb);
@@ -2539,15 +2539,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		SCTP_INP_RUNLOCK(inp);
 		if (error == 0) {
 			ids->gaids_number_of_ids = at;
-			*optsize = ((at * sizeof(sctp_assoc_t)) + sizeof(uint32_t));
+			*optsize = ((at * sizeof(usrsctp_assoc_t)) + sizeof(uint32_t));
 		}
 		break;
 	}
-	case SCTP_CONTEXT:
+	case USR_SCTP_CONTEXT:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -2557,7 +2557,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->sctp_context;
 				SCTP_INP_RUNLOCK(inp);
@@ -2567,7 +2567,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
@@ -2582,9 +2582,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	}
 	case SCTP_GET_ASOC_VRF:
 	{
-		struct sctp_assoc_value *id;
+		struct usrsctp_assoc_value *id;
 
-		SCTP_CHECK_AND_CAST(id, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(id, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, id->assoc_id);
 		if (stcb == NULL) {
 			error = EINVAL;
@@ -2592,7 +2592,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		} else {
 			id->assoc_value = stcb->asoc.vrf_id;
 			SCTP_TCB_UNLOCK(stcb);
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
@@ -2635,11 +2635,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_DELAYED_SACK:
+	case USR_SCTP_DELAYED_SACK:
 	{
-		struct sctp_sack_info *sack;
+		struct usrsctp_sack_info *sack;
 
-		SCTP_CHECK_AND_CAST(sack, optval, struct sctp_sack_info, *optsize);
+		SCTP_CHECK_AND_CAST(sack, optval, struct usrsctp_sack_info, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sack->sack_assoc_id);
 		if (stcb) {
 			sack->sack_delay = stcb->asoc.delayed_ack;
@@ -2649,7 +2649,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (sack->sack_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (sack->sack_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				sack->sack_delay = sctp_ticks_to_msecs(inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_RECV]);
 				sack->sack_freq = inp->sctp_ep.sctp_sack_freq;
@@ -2660,7 +2660,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_sack_info);
+			*optsize = sizeof(struct usrsctp_sack_info);
 		}
 		break;
 	}
@@ -2683,11 +2683,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_MAX_BURST:
+	case USR_SCTP_MAX_BURST:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -2697,7 +2697,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->sctp_ep.max_burst;
 				SCTP_INP_RUNLOCK(inp);
@@ -2707,15 +2707,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_MAXSEG:
+	case USR_SCTP_MAXSEG:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -2725,7 +2725,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->sctp_frag_point;
 				SCTP_INP_RUNLOCK(inp);
@@ -2735,7 +2735,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
@@ -2744,10 +2744,10 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		break;
 	case SCTP_EVENTS:
 	{
-		struct sctp_event_subscribe *events;
+		struct usrsctp_event_subscribe *events;
 
-		SCTP_CHECK_AND_CAST(events, optval, struct sctp_event_subscribe, *optsize);
-		memset(events, 0, sizeof(struct sctp_event_subscribe));
+		SCTP_CHECK_AND_CAST(events, optval, struct usrsctp_event_subscribe, *optsize);
+		memset(events, 0, sizeof(struct usrsctp_event_subscribe));
 		SCTP_INP_RLOCK(inp);
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVDATAIOEVNT))
 			events->sctp_data_io_event = 1;
@@ -2765,7 +2765,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			events->sctp_peer_error_event = 1;
 
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT))
-			events->sctp_shutdown_event = 1;
+			events->usrsctp_shutdown_event = 1;
 
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_PDAPIEVNT))
 			events->sctp_partial_delivery_event = 1;
@@ -2777,15 +2777,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			events->sctp_authentication_event = 1;
 
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_DRYEVNT))
-			events->sctp_sender_dry_event = 1;
+			events->usrsctp_sender_dry_event = 1;
 
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_STREAM_RESETEVNT))
-			events->sctp_stream_reset_event = 1;
+			events->usrsctp_stream_reset_event = 1;
 		SCTP_INP_RUNLOCK(inp);
-		*optsize = sizeof(struct sctp_event_subscribe);
+		*optsize = sizeof(struct usrsctp_event_subscribe);
 		break;
 	}
-	case SCTP_ADAPTATION_LAYER:
+	case USR_SCTP_ADAPTATION_LAYER:
 	{
 		uint32_t *value;
 
@@ -2826,8 +2826,8 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		size_t size;
 
 		SCTP_CHECK_AND_CAST(value, optval, uint32_t, *optsize);
-		/* FIXME MT: change to sctp_assoc_value? */
-		SCTP_FIND_STCB(inp, stcb, (sctp_assoc_t)*value);
+		/* FIXME MT: change to usrsctp_assoc_value? */
+		SCTP_FIND_STCB(inp, stcb, (usrsctp_assoc_t)*value);
 
 		if (stcb != NULL) {
 			size = 0;
@@ -2866,7 +2866,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			*optsize = sizeof(uint32_t);
 		} else {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((sctp_assoc_t)*value <= SCTP_ALL_ASSOC)) {
+			    ((usrsctp_assoc_t)*value <= USR_SCTP_ALL_ASSOC)) {
 				error = EINVAL;
 			} else {
 				error = ENOENT;
@@ -2951,7 +2951,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_TCB_UNLOCK(stcb);
 		} else {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    (saddr->sget_assoc_id <= SCTP_ALL_ASSOC)) {
+			    (saddr->sget_assoc_id <= USR_SCTP_ALL_ASSOC)) {
 				error = EINVAL;
 			} else {
 				error = ENOENT;
@@ -2969,8 +2969,8 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		SCTP_FIND_STCB(inp, stcb, saddr->sget_assoc_id);
 
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-		    ((saddr->sget_assoc_id == SCTP_CURRENT_ASSOC) ||
-		     (saddr->sget_assoc_id == SCTP_ALL_ASSOC))) {
+		    ((saddr->sget_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+		     (saddr->sget_assoc_id == USR_SCTP_ALL_ASSOC))) {
 			error = EINVAL;
 		} else {
 			limit = *optsize - offsetof(struct sctp_getaddresses, addr);
@@ -2982,16 +2982,16 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_PEER_ADDR_PARAMS:
+	case USR_SCTP_PEER_ADDR_PARAMS:
 	{
-		struct sctp_paddrparams *paddrp;
+		struct usrsctp_paddrparams *paddrp;
 		struct sctp_nets *net;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(paddrp, optval, struct sctp_paddrparams, *optsize);
+		SCTP_CHECK_AND_CAST(paddrp, optval, struct usrsctp_paddrparams, *optsize);
 		SCTP_FIND_STCB(inp, stcb, paddrp->spp_assoc_id);
 
 #if defined(INET) && defined(INET6)
@@ -3101,25 +3101,25 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				}
 				/* get flags for HB */
 				if (net->dest_state & SCTP_ADDR_NOHB) {
-					paddrp->spp_flags |= SPP_HB_DISABLE;
+					paddrp->spp_flags |= USR_SPP_HB_DISABLE;
 				} else {
-					paddrp->spp_flags |= SPP_HB_ENABLE;
+					paddrp->spp_flags |= USR_SPP_HB_ENABLE;
 				}
 				/* get flags for PMTU */
 				if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
-					paddrp->spp_flags |= SPP_PMTUD_DISABLE;
+					paddrp->spp_flags |= USR_SPP_PMTUD_DISABLE;
 				} else {
-					paddrp->spp_flags |= SPP_PMTUD_ENABLE;
+					paddrp->spp_flags |= USR_SPP_PMTUD_ENABLE;
 				}
 				if (net->dscp & 0x01) {
 					paddrp->spp_dscp = net->dscp & 0xfc;
-					paddrp->spp_flags |= SPP_DSCP;
+					paddrp->spp_flags |= USR_SPP_DSCP;
 				}
 #ifdef INET6
 				if ((net->ro._l_addr.sa.sa_family == AF_INET6) &&
 				    (net->flowlabel & 0x80000000)) {
 					paddrp->spp_ipv6_flowlabel = net->flowlabel & 0x000fffff;
-					paddrp->spp_flags |= SPP_IPV6_FLOWLABEL;
+					paddrp->spp_flags |= USR_SPP_IPV6_FLOWLABEL;
 				}
 #endif
 			} else {
@@ -3131,24 +3131,24 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				paddrp->spp_pathmtu = stcb->asoc.default_mtu;
 				if (stcb->asoc.default_dscp & 0x01) {
 					paddrp->spp_dscp = stcb->asoc.default_dscp & 0xfc;
-					paddrp->spp_flags |= SPP_DSCP;
+					paddrp->spp_flags |= USR_SPP_DSCP;
 				}
 #ifdef INET6
 				if (stcb->asoc.default_flowlabel & 0x80000000) {
 					paddrp->spp_ipv6_flowlabel = stcb->asoc.default_flowlabel & 0x000fffff;
-					paddrp->spp_flags |= SPP_IPV6_FLOWLABEL;
+					paddrp->spp_flags |= USR_SPP_IPV6_FLOWLABEL;
 				}
 #endif
 				/* default settings should be these */
 				if (sctp_stcb_is_feature_on(inp, stcb, SCTP_PCB_FLAGS_DONOT_HEARTBEAT)) {
-					paddrp->spp_flags |= SPP_HB_DISABLE;
+					paddrp->spp_flags |= USR_SPP_HB_DISABLE;
 				} else {
-					paddrp->spp_flags |= SPP_HB_ENABLE;
+					paddrp->spp_flags |= USR_SPP_HB_ENABLE;
 				}
 				if (sctp_stcb_is_feature_on(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD)) {
-					paddrp->spp_flags |= SPP_PMTUD_DISABLE;
+					paddrp->spp_flags |= USR_SPP_PMTUD_DISABLE;
 				} else {
-					paddrp->spp_flags |= SPP_PMTUD_ENABLE;
+					paddrp->spp_flags |= USR_SPP_PMTUD_ENABLE;
 				}
 				paddrp->spp_hbinterval = stcb->asoc.heart_beat_delay;
 			}
@@ -3158,35 +3158,35 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (paddrp->spp_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (paddrp->spp_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				/* Use endpoint defaults */
 				SCTP_INP_RLOCK(inp);
 				paddrp->spp_pathmaxrxt = inp->sctp_ep.def_net_failure;
 				paddrp->spp_hbinterval = sctp_ticks_to_msecs(inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_HEARTBEAT]);
-				paddrp->spp_assoc_id = SCTP_FUTURE_ASSOC;
+				paddrp->spp_assoc_id = USR_SCTP_FUTURE_ASSOC;
 				/* get inp's default */
 				if (inp->sctp_ep.default_dscp & 0x01) {
 					paddrp->spp_dscp = inp->sctp_ep.default_dscp & 0xfc;
-					paddrp->spp_flags |= SPP_DSCP;
+					paddrp->spp_flags |= USR_SPP_DSCP;
 				}
 #ifdef INET6
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
 				    (inp->sctp_ep.default_flowlabel & 0x80000000)) {
 					paddrp->spp_ipv6_flowlabel = inp->sctp_ep.default_flowlabel & 0x000fffff;
-					paddrp->spp_flags |= SPP_IPV6_FLOWLABEL;
+					paddrp->spp_flags |= USR_SPP_IPV6_FLOWLABEL;
 				}
 #endif
 				paddrp->spp_pathmtu = inp->sctp_ep.default_mtu;
 
 				if (sctp_is_feature_off(inp, SCTP_PCB_FLAGS_DONOT_HEARTBEAT)) {
-					paddrp->spp_flags |= SPP_HB_ENABLE;
+					paddrp->spp_flags |= USR_SPP_HB_ENABLE;
 				} else {
-					paddrp->spp_flags |= SPP_HB_DISABLE;
+					paddrp->spp_flags |= USR_SPP_HB_DISABLE;
 				}
 				if (sctp_is_feature_off(inp, SCTP_PCB_FLAGS_DO_NOT_PMTUD)) {
-					paddrp->spp_flags |= SPP_PMTUD_ENABLE;
+					paddrp->spp_flags |= USR_SPP_PMTUD_ENABLE;
 				} else {
-					paddrp->spp_flags |= SPP_PMTUD_DISABLE;
+					paddrp->spp_flags |= USR_SPP_PMTUD_DISABLE;
 				}
 				SCTP_INP_RUNLOCK(inp);
 			} else {
@@ -3195,20 +3195,20 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_paddrparams);
+			*optsize = sizeof(struct usrsctp_paddrparams);
 		}
 		break;
 	}
-	case SCTP_GET_PEER_ADDR_INFO:
+	case USR_SCTP_GET_PEER_ADDR_INFO:
 	{
-		struct sctp_paddrinfo *paddri;
+		struct usrsctp_paddrinfo *paddri;
 		struct sctp_nets *net;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(paddri, optval, struct sctp_paddrinfo, *optsize);
+		SCTP_CHECK_AND_CAST(paddri, optval, struct usrsctp_paddrinfo, *optsize);
 		SCTP_FIND_STCB(inp, stcb, paddri->spinfo_assoc_id);
 
 #if defined(INET) && defined(INET6)
@@ -3246,13 +3246,13 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if ((stcb != NULL) && (net != NULL)) {
 			if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
 				/* It's unconfirmed */
-				paddri->spinfo_state = SCTP_UNCONFIRMED;
+				paddri->spinfo_state = USR_SCTP_UNCONFIRMED;
 			} else if (net->dest_state & SCTP_ADDR_REACHABLE) {
 				/* It's active */
-				paddri->spinfo_state = SCTP_ACTIVE;
+				paddri->spinfo_state = USR_SCTP_ACTIVE;
 			} else {
 				/* It's inactive */
-				paddri->spinfo_state = SCTP_INACTIVE;
+				paddri->spinfo_state = USR_SCTP_INACTIVE;
 			}
 			paddri->spinfo_cwnd = net->cwnd;
 			paddri->spinfo_srtt = net->lastsa >> SCTP_RTT_SHIFT;
@@ -3279,7 +3279,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				break;
 			}
 			SCTP_TCB_UNLOCK(stcb);
-			*optsize = sizeof(struct sctp_paddrinfo);
+			*optsize = sizeof(struct usrsctp_paddrinfo);
 		} else {
 			if (stcb != NULL) {
 				SCTP_TCB_UNLOCK(stcb);
@@ -3298,12 +3298,12 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = sizeof(struct sctp_pcbinfo);
 		break;
 	}
-	case SCTP_STATUS:
+	case USR_SCTP_STATUS:
 	{
 		struct sctp_nets *net;
-		struct sctp_status *sstat;
+		struct usrsctp_status *sstat;
 
-		SCTP_CHECK_AND_CAST(sstat, optval, struct sctp_status, *optsize);
+		SCTP_CHECK_AND_CAST(sstat, optval, struct usrsctp_status, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sstat->sstat_assoc_id);
 
 		if (stcb == NULL) {
@@ -3364,13 +3364,13 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			 */
 			if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
 				/* It's unconfirmed */
-				sstat->sstat_primary.spinfo_state = SCTP_UNCONFIRMED;
+				sstat->sstat_primary.spinfo_state = USR_SCTP_UNCONFIRMED;
 			} else if (net->dest_state & SCTP_ADDR_REACHABLE) {
 				/* It's active */
-				sstat->sstat_primary.spinfo_state = SCTP_ACTIVE;
+				sstat->sstat_primary.spinfo_state = USR_SCTP_ACTIVE;
 			} else {
 				/* It's inactive */
-				sstat->sstat_primary.spinfo_state = SCTP_INACTIVE;
+				sstat->sstat_primary.spinfo_state = USR_SCTP_INACTIVE;
 			}
 			sstat->sstat_primary.spinfo_cwnd = net->cwnd;
 			sstat->sstat_primary.spinfo_srtt = net->lastsa >> SCTP_RTT_SHIFT;
@@ -3396,18 +3396,18 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				break;
 			}
 		} else {
-			memset(&sstat->sstat_primary, 0, sizeof(struct sctp_paddrinfo));
+			memset(&sstat->sstat_primary, 0, sizeof(struct usrsctp_paddrinfo));
 		}
 		sstat->sstat_primary.spinfo_assoc_id = sctp_get_associd(stcb);
 		SCTP_TCB_UNLOCK(stcb);
-		*optsize = sizeof(struct sctp_status);
+		*optsize = sizeof(struct usrsctp_status);
 		break;
 	}
-	case SCTP_RTOINFO:
+	case USR_SCTP_RTOINFO:
 	{
-		struct sctp_rtoinfo *srto;
+		struct usrsctp_rtoinfo *srto;
 
-		SCTP_CHECK_AND_CAST(srto, optval, struct sctp_rtoinfo, *optsize);
+		SCTP_CHECK_AND_CAST(srto, optval, struct usrsctp_rtoinfo, *optsize);
 		SCTP_FIND_STCB(inp, stcb, srto->srto_assoc_id);
 
 		if (stcb) {
@@ -3419,7 +3419,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (srto->srto_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (srto->srto_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				srto->srto_initial = inp->sctp_ep.initial_rto;
 				srto->srto_max = inp->sctp_ep.sctp_maxrto;
@@ -3431,11 +3431,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_rtoinfo);
+			*optsize = sizeof(struct usrsctp_rtoinfo);
 		}
 		break;
 	}
-	case SCTP_TIMEOUTS:
+	case USR_SCTP_TIMEOUTS:
 	{
 		struct sctp_timeouts *stimo;
 
@@ -3458,11 +3458,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_ASSOCINFO:
+	case USR_SCTP_ASSOCINFO:
 	{
-		struct sctp_assocparams *sasoc;
+		struct usrsctp_assocparams *sasoc;
 
-		SCTP_CHECK_AND_CAST(sasoc, optval, struct sctp_assocparams, *optsize);
+		SCTP_CHECK_AND_CAST(sasoc, optval, struct usrsctp_assocparams, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sasoc->sasoc_assoc_id);
 
 		if (stcb) {
@@ -3476,7 +3476,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (sasoc->sasoc_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (sasoc->sasoc_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				sasoc->sasoc_cookie_life = sctp_ticks_to_msecs(inp->sctp_ep.def_cookie_life);
 				sasoc->sasoc_asocmaxrxt = inp->sctp_ep.max_send_times;
@@ -3490,7 +3490,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assocparams);
+			*optsize = sizeof(struct usrsctp_assocparams);
 		}
 		break;
 	}
@@ -3508,7 +3508,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (s_info->sinfo_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (s_info->sinfo_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				memcpy(s_info, &inp->def_send, sizeof(inp->def_send));
 				SCTP_INP_RUNLOCK(inp);
@@ -3522,26 +3522,26 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_INITMSG:
+	case USR_SCTP_INITMSG:
 	{
-		struct sctp_initmsg *sinit;
+		struct usrsctp_initmsg *sinit;
 
-		SCTP_CHECK_AND_CAST(sinit, optval, struct sctp_initmsg, *optsize);
+		SCTP_CHECK_AND_CAST(sinit, optval, struct usrsctp_initmsg, *optsize);
 		SCTP_INP_RLOCK(inp);
 		sinit->sinit_num_ostreams = inp->sctp_ep.pre_open_stream_count;
 		sinit->sinit_max_instreams = inp->sctp_ep.max_open_streams_intome;
 		sinit->sinit_max_attempts = inp->sctp_ep.max_init_times;
 		sinit->sinit_max_init_timeo = inp->sctp_ep.initial_init_rto_max;
 		SCTP_INP_RUNLOCK(inp);
-		*optsize = sizeof(struct sctp_initmsg);
+		*optsize = sizeof(struct usrsctp_initmsg);
 		break;
 	}
-	case SCTP_PRIMARY_ADDR:
+	case USR_SCTP_PRIMARY_ADDR:
 		/* we allow a "get" operation on this */
 	{
-		struct sctp_setprim *ssp;
+		struct usrsctp_setprim *ssp;
 
-		SCTP_CHECK_AND_CAST(ssp, optval, struct sctp_setprim, *optsize);
+		SCTP_CHECK_AND_CAST(ssp, optval, struct usrsctp_setprim, *optsize);
 		SCTP_FIND_STCB(inp, stcb, ssp->ssp_assoc_id);
 
 		if (stcb) {
@@ -3577,21 +3577,21 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				break;
 			}
 			SCTP_TCB_UNLOCK(stcb);
-			*optsize = sizeof(struct sctp_setprim);
+			*optsize = sizeof(struct usrsctp_setprim);
 		} else {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 		}
 		break;
 	}
-	case SCTP_HMAC_IDENT:
+	case USR_SCTP_HMAC_IDENT:
 	{
-		struct sctp_hmacalgo *shmac;
+		struct usrsctp_hmacalgo *shmac;
 		sctp_hmaclist_t *hmaclist;
 		size_t size;
 		int i;
 
-		SCTP_CHECK_AND_CAST(shmac, optval, struct sctp_hmacalgo, *optsize);
+		SCTP_CHECK_AND_CAST(shmac, optval, struct usrsctp_hmacalgo, *optsize);
 
 		SCTP_INP_RLOCK(inp);
 		hmaclist = inp->sctp_ep.local_hmacs;
@@ -3619,11 +3619,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = size;
 		break;
 	}
-	case SCTP_AUTH_ACTIVE_KEY:
+	case USR_SCTP_AUTH_ACTIVE_KEY:
 	{
-		struct sctp_authkeyid *scact;
+		struct usrsctp_authkeyid *scact;
 
-		SCTP_CHECK_AND_CAST(scact, optval, struct sctp_authkeyid, *optsize);
+		SCTP_CHECK_AND_CAST(scact, optval, struct usrsctp_authkeyid, *optsize);
 		SCTP_FIND_STCB(inp, stcb, scact->scact_assoc_id);
 
 		if (stcb) {
@@ -3634,7 +3634,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (scact->scact_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (scact->scact_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				/* get the endpoint active key */
 				SCTP_INP_RLOCK(inp);
 				scact->scact_keynumber = inp->sctp_ep.default_keyid;
@@ -3645,17 +3645,17 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_authkeyid);
+			*optsize = sizeof(struct usrsctp_authkeyid);
 		}
 		break;
 	}
-	case SCTP_LOCAL_AUTH_CHUNKS:
+	case USR_SCTP_LOCAL_AUTH_CHUNKS:
 	{
-		struct sctp_authchunks *sac;
+		struct usrsctp_authchunks *sac;
 		sctp_auth_chklist_t *chklist = NULL;
 		size_t size = 0;
 
-		SCTP_CHECK_AND_CAST(sac, optval, struct sctp_authchunks, *optsize);
+		SCTP_CHECK_AND_CAST(sac, optval, struct usrsctp_authchunks, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sac->gauth_assoc_id);
 
 		if (stcb) {
@@ -3663,34 +3663,34 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			chklist = stcb->asoc.local_auth_chunks;
 			/* is there enough space? */
 			size = sctp_auth_get_chklist_size(chklist);
-			if (*optsize < (sizeof(struct sctp_authchunks) + size)) {
+			if (*optsize < (sizeof(struct usrsctp_authchunks) + size)) {
 				error = EINVAL;
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 			} else {
 				/* copy in the chunks */
 				(void)sctp_serialize_auth_chunks(chklist, sac->gauth_chunks);
 				sac->gauth_number_of_chunks = (uint32_t)size;
-				*optsize = sizeof(struct sctp_authchunks) + size;
+				*optsize = sizeof(struct usrsctp_authchunks) + size;
 			}
 			SCTP_TCB_UNLOCK(stcb);
 		} else {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (sac->gauth_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (sac->gauth_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				/* get off the endpoint */
 				SCTP_INP_RLOCK(inp);
 				chklist = inp->sctp_ep.local_auth_chunks;
 				/* is there enough space? */
 				size = sctp_auth_get_chklist_size(chklist);
-				if (*optsize < (sizeof(struct sctp_authchunks) + size)) {
+				if (*optsize < (sizeof(struct usrsctp_authchunks) + size)) {
 					error = EINVAL;
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 				} else {
 					/* copy in the chunks */
 					(void)sctp_serialize_auth_chunks(chklist, sac->gauth_chunks);
 					sac->gauth_number_of_chunks = (uint32_t)size;
-					*optsize = sizeof(struct sctp_authchunks) + size;
+					*optsize = sizeof(struct usrsctp_authchunks) + size;
 				}
 				SCTP_INP_RUNLOCK(inp);
 			} else {
@@ -3700,13 +3700,13 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_PEER_AUTH_CHUNKS:
+	case USR_SCTP_PEER_AUTH_CHUNKS:
 	{
-		struct sctp_authchunks *sac;
+		struct usrsctp_authchunks *sac;
 		sctp_auth_chklist_t *chklist = NULL;
 		size_t size = 0;
 
-		SCTP_CHECK_AND_CAST(sac, optval, struct sctp_authchunks, *optsize);
+		SCTP_CHECK_AND_CAST(sac, optval, struct usrsctp_authchunks, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sac->gauth_assoc_id);
 
 		if (stcb) {
@@ -3714,14 +3714,14 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			chklist = stcb->asoc.peer_auth_chunks;
 			/* is there enough space? */
 			size = sctp_auth_get_chklist_size(chklist);
-			if (*optsize < (sizeof(struct sctp_authchunks) + size)) {
+			if (*optsize < (sizeof(struct usrsctp_authchunks) + size)) {
 				error = EINVAL;
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 			} else {
 				/* copy in the chunks */
 				(void)sctp_serialize_auth_chunks(chklist, sac->gauth_chunks);
 				sac->gauth_number_of_chunks = (uint32_t)size;
-				*optsize = sizeof(struct sctp_authchunks) + size;
+				*optsize = sizeof(struct usrsctp_authchunks) + size;
 			}
 			SCTP_TCB_UNLOCK(stcb);
 		} else {
@@ -3744,57 +3744,57 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	}
 	break;
 #endif /* HAVE_SCTP_PEELOFF_SOCKOPT */
-	case SCTP_EVENT:
+	case USR_SCTP_EVENT:
 	{
-		struct sctp_event *event;
+		struct usrsctp_event *event;
 		uint32_t event_type;
 
-		SCTP_CHECK_AND_CAST(event, optval, struct sctp_event, *optsize);
+		SCTP_CHECK_AND_CAST(event, optval, struct usrsctp_event, *optsize);
 		SCTP_FIND_STCB(inp, stcb, event->se_assoc_id);
 
 		switch (event->se_type) {
-		case SCTP_ASSOC_CHANGE:
+		case USR_SCTP_ASSOC_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVASSOCEVNT;
 			break;
-		case SCTP_PEER_ADDR_CHANGE:
+		case USR_SCTP_PEER_ADDR_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVPADDREVNT;
 			break;
-		case SCTP_REMOTE_ERROR:
+		case USR_SCTP_REMOTE_ERROR:
 			event_type = SCTP_PCB_FLAGS_RECVPEERERR;
 			break;
-		case SCTP_SEND_FAILED:
+		case USR_SCTP_SEND_FAILED:
 			event_type = SCTP_PCB_FLAGS_RECVSENDFAILEVNT;
 			break;
-		case SCTP_SHUTDOWN_EVENT:
+		case USR_SCTP_SHUTDOWN_EVENT:
 			event_type = SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT;
 			break;
-		case SCTP_ADAPTATION_INDICATION:
+		case USR_SCTP_ADAPTATION_INDICATION:
 			event_type = SCTP_PCB_FLAGS_ADAPTATIONEVNT;
 			break;
-		case SCTP_PARTIAL_DELIVERY_EVENT:
+		case USR_SCTP_PARTIAL_DELIVERY_EVENT:
 			event_type = SCTP_PCB_FLAGS_PDAPIEVNT;
 			break;
-		case SCTP_AUTHENTICATION_EVENT:
+		case USR_SCTP_AUTHENTICATION_EVENT:
 			event_type = SCTP_PCB_FLAGS_AUTHEVNT;
 			break;
-		case SCTP_STREAM_RESET_EVENT:
+		case USR_SCTP_STREAM_RESET_EVENT:
 			event_type = SCTP_PCB_FLAGS_STREAM_RESETEVNT;
 			break;
-		case SCTP_SENDER_DRY_EVENT:
+		case USR_SCTP_SENDER_DRY_EVENT:
 			event_type = SCTP_PCB_FLAGS_DRYEVNT;
 			break;
-		case SCTP_NOTIFICATIONS_STOPPED_EVENT:
+		case USR_SCTP_NOTIFICATIONS_STOPPED_EVENT:
 			event_type = 0;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
 			error = ENOTSUP;
 			break;
-		case SCTP_ASSOC_RESET_EVENT:
+		case USR_SCTP_ASSOC_RESET_EVENT:
 			event_type = SCTP_PCB_FLAGS_ASSOC_RESETEVNT;
 			break;
-		case SCTP_STREAM_CHANGE_EVENT:
+		case USR_SCTP_STREAM_CHANGE_EVENT:
 			event_type = SCTP_PCB_FLAGS_STREAM_CHANGEEVNT;
 			break;
-		case SCTP_SEND_FAILED_EVENT:
+		case USR_SCTP_SEND_FAILED_EVENT:
 			event_type = SCTP_PCB_FLAGS_RECVNSENDFAILEVNT;
 			break;
 		default:
@@ -3810,7 +3810,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 				    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-				     (event->se_assoc_id == SCTP_FUTURE_ASSOC))) {
+				     (event->se_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 					SCTP_INP_RLOCK(inp);
 					event->se_on = sctp_is_feature_on(inp, event_type);
 					SCTP_INP_RUNLOCK(inp);
@@ -3824,11 +3824,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_TCB_UNLOCK(stcb);
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_event);
+			*optsize = sizeof(struct usrsctp_event);
 		}
 		break;
 	}
-	case SCTP_RECVRCVINFO:
+	case USR_SCTP_RECVRCVINFO:
 		if (*optsize < sizeof(int)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
@@ -3839,7 +3839,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			*optsize = sizeof(int);
 		}
 		break;
-	case SCTP_RECVNXTINFO:
+	case USR_SCTP_RECVNXTINFO:
 		if (*optsize < sizeof(int)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
@@ -3850,11 +3850,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			*optsize = sizeof(int);
 		}
 		break;
-	case SCTP_DEFAULT_SNDINFO:
+	case USR_SCTP_DEFAULT_SNDINFO:
 	{
-		struct sctp_sndinfo *info;
+		struct usrsctp_sndinfo *info;
 
-		SCTP_CHECK_AND_CAST(info, optval, struct sctp_sndinfo, *optsize);
+		SCTP_CHECK_AND_CAST(info, optval, struct usrsctp_sndinfo, *optsize);
 		SCTP_FIND_STCB(inp, stcb, info->snd_assoc_id);
 
 		if (stcb) {
@@ -3868,7 +3868,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (info->snd_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (info->snd_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				info->snd_sid = inp->def_send.sinfo_stream;
 				info->snd_flags = inp->def_send.sinfo_flags;
@@ -3882,15 +3882,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_sndinfo);
+			*optsize = sizeof(struct usrsctp_sndinfo);
 		}
 		break;
 	}
-	case SCTP_DEFAULT_PRINFO:
+	case USR_SCTP_DEFAULT_PRINFO:
 	{
-		struct sctp_default_prinfo *info;
+		struct usrsctp_default_prinfo *info;
 
-		SCTP_CHECK_AND_CAST(info, optval, struct sctp_default_prinfo, *optsize);
+		SCTP_CHECK_AND_CAST(info, optval, struct usrsctp_default_prinfo, *optsize);
 		SCTP_FIND_STCB(inp, stcb, info->pr_assoc_id);
 
 		if (stcb) {
@@ -3901,7 +3901,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (info->pr_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (info->pr_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				info->pr_policy = PR_SCTP_POLICY(inp->def_send.sinfo_flags);
 				info->pr_value = inp->def_send.sinfo_timetolive;
@@ -3912,7 +3912,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_default_prinfo);
+			*optsize = sizeof(struct usrsctp_default_prinfo);
 		}
 		break;
 	}
@@ -4023,7 +4023,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (thlds->spt_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (thlds->spt_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				/* Use endpoint defaults */
 				SCTP_INP_RLOCK(inp);
 				thlds->spt_pathmaxrxt = inp->sctp_ep.def_net_failure;
@@ -4040,16 +4040,16 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
-	case SCTP_REMOTE_UDP_ENCAPS_PORT:
+	case USR_SCTP_REMOTE_UDP_ENCAPS_PORT:
 	{
-		struct sctp_udpencaps *encaps;
+		struct usrsctp_udpencaps *encaps;
 		struct sctp_nets *net;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(encaps, optval, struct sctp_udpencaps, *optsize);
+		SCTP_CHECK_AND_CAST(encaps, optval, struct usrsctp_udpencaps, *optsize);
 		SCTP_FIND_STCB(inp, stcb, encaps->sue_assoc_id);
 
 #if defined(INET) && defined(INET6)
@@ -4142,7 +4142,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (encaps->sue_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (encaps->sue_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				encaps->sue_port = inp->sctp_ep.port;
 				SCTP_INP_RUNLOCK(inp);
@@ -4152,15 +4152,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_udpencaps);
+			*optsize = sizeof(struct usrsctp_udpencaps);
 		}
 		break;
 	}
-	case SCTP_ECN_SUPPORTED:
+	case USR_SCTP_ECN_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4170,7 +4170,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->ecn_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4180,15 +4180,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_PR_SUPPORTED:
+	case USR_SCTP_PR_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4198,7 +4198,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->prsctp_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4208,15 +4208,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_AUTH_SUPPORTED:
+	case USR_SCTP_AUTH_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4226,7 +4226,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->auth_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4236,15 +4236,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_ASCONF_SUPPORTED:
+	case USR_SCTP_ASCONF_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4254,7 +4254,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->asconf_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4264,15 +4264,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_RECONFIG_SUPPORTED:
+	case USR_SCTP_RECONFIG_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4282,7 +4282,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->reconfig_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4292,15 +4292,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_NRSACK_SUPPORTED:
+	case USR_SCTP_NRSACK_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4310,7 +4310,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->nrsack_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4320,15 +4320,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_PKTDROP_SUPPORTED:
+	case USR_SCTP_PKTDROP_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4338,7 +4338,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->pktdrop_supported;
 				SCTP_INP_RUNLOCK(inp);
@@ -4348,15 +4348,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
 	case SCTP_ENABLE_STREAM_RESET:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4366,7 +4366,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = (uint32_t)inp->local_strreset_support;
 				SCTP_INP_RUNLOCK(inp);
@@ -4376,17 +4376,17 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
-	case SCTP_PR_STREAM_STATUS:
+	case USR_SCTP_PR_STREAM_STATUS:
 	{
-		struct sctp_prstatus *sprstat;
+		struct usrsctp_prstatus *sprstat;
 		uint16_t sid;
 		uint16_t policy;
 
-		SCTP_CHECK_AND_CAST(sprstat, optval, struct sctp_prstatus, *optsize);
+		SCTP_CHECK_AND_CAST(sprstat, optval, struct usrsctp_prstatus, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sprstat->sprstat_assoc_id);
 
 		sid = sprstat->sprstat_sid;
@@ -4394,7 +4394,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 #if defined(SCTP_DETAILED_STR_STATS)
 		if ((stcb != NULL) &&
 		    (sid < stcb->asoc.streamoutcnt) &&
-		    (policy != SCTP_PR_SCTP_NONE) &&
+		    (policy != USR_SCTP_PR_SCTP_NONE) &&
 		    ((policy <= SCTP_PR_SCTP_MAX) ||
 		     (policy == SCTP_PR_SCTP_ALL))) {
 			if (policy == SCTP_PR_SCTP_ALL) {
@@ -4419,21 +4419,21 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_TCB_UNLOCK(stcb);
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_prstatus);
+			*optsize = sizeof(struct usrsctp_prstatus);
 		}
 		break;
 	}
-	case SCTP_PR_ASSOC_STATUS:
+	case USR_SCTP_PR_ASSOC_STATUS:
 	{
-		struct sctp_prstatus *sprstat;
+		struct usrsctp_prstatus *sprstat;
 		uint16_t policy;
 
-		SCTP_CHECK_AND_CAST(sprstat, optval, struct sctp_prstatus, *optsize);
+		SCTP_CHECK_AND_CAST(sprstat, optval, struct usrsctp_prstatus, *optsize);
 		SCTP_FIND_STCB(inp, stcb, sprstat->sprstat_assoc_id);
 
 		policy = sprstat->sprstat_policy;
 		if ((stcb != NULL) &&
-		    (policy != SCTP_PR_SCTP_NONE) &&
+		    (policy != USR_SCTP_PR_SCTP_NONE) &&
 		    ((policy <= SCTP_PR_SCTP_MAX) ||
 		     (policy == SCTP_PR_SCTP_ALL))) {
 			if (policy == SCTP_PR_SCTP_ALL) {
@@ -4451,15 +4451,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_TCB_UNLOCK(stcb);
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_prstatus);
+			*optsize = sizeof(struct usrsctp_prstatus);
 		}
 		break;
 	}
-	case SCTP_MAX_CWND:
+	case USR_SCTP_MAX_CWND:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, *optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4469,7 +4469,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				av->assoc_value = inp->max_cwnd;
 				SCTP_INP_RUNLOCK(inp);
@@ -4479,7 +4479,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			}
 		}
 		if (error == 0) {
-			*optsize = sizeof(struct sctp_assoc_value);
+			*optsize = sizeof(struct usrsctp_assoc_value);
 		}
 		break;
 	}
@@ -4521,23 +4521,23 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 
 	error = 0;
 	switch (optname) {
-	case SCTP_NODELAY:
-	case SCTP_AUTOCLOSE:
-	case SCTP_AUTO_ASCONF:
-	case SCTP_EXPLICIT_EOR:
-	case SCTP_DISABLE_FRAGMENTS:
+	case USR_SCTP_NODELAY:
+	case USR_SCTP_AUTOCLOSE:
+	case USR_SCTP_AUTO_ASCONF:
+	case USR_SCTP_EXPLICIT_EOR:
+	case USR_SCTP_DISABLE_FRAGMENTS:
 	case SCTP_USE_EXT_RCVINFO:
-	case SCTP_I_WANT_MAPPED_V4_ADDR:
+	case USR_SCTP_I_WANT_MAPPED_V4_ADDR:
 		/* copy in the option value */
 		SCTP_CHECK_AND_CAST(mopt, optval, uint32_t, optsize);
 		set_opt = 0;
 		if (error)
 			break;
 		switch (optname) {
-		case SCTP_DISABLE_FRAGMENTS:
+		case USR_SCTP_DISABLE_FRAGMENTS:
 			set_opt = SCTP_PCB_FLAGS_NO_FRAGMENT;
 			break;
-		case SCTP_AUTO_ASCONF:
+		case USR_SCTP_AUTO_ASCONF:
 			/*
 			 * NOTE: we don't really support this flag
 			 */
@@ -4555,13 +4555,13 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				return (EINVAL);
 			}
 			break;
-		case SCTP_EXPLICIT_EOR:
+		case USR_SCTP_EXPLICIT_EOR:
 			set_opt = SCTP_PCB_FLAGS_EXPLICIT_EOR;
 			break;
 		case SCTP_USE_EXT_RCVINFO:
 			set_opt = SCTP_PCB_FLAGS_EXT_RCVINFO;
 			break;
-		case SCTP_I_WANT_MAPPED_V4_ADDR:
+		case USR_SCTP_I_WANT_MAPPED_V4_ADDR:
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 				set_opt = SCTP_PCB_FLAGS_NEEDS_MAPPED_V4;
 			} else {
@@ -4569,10 +4569,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				return (EINVAL);
 			}
 			break;
-		case SCTP_NODELAY:
+		case USR_SCTP_NODELAY:
 			set_opt = SCTP_PCB_FLAGS_NODELAY;
 			break;
-		case SCTP_AUTOCLOSE:
+		case USR_SCTP_AUTOCLOSE:
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -4594,7 +4594,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		SCTP_INP_WUNLOCK(inp);
 		break;
-	case SCTP_REUSE_PORT:
+	case USR_SCTP_REUSE_PORT:
 	{
 		SCTP_CHECK_AND_CAST(mopt, optval, uint32_t, optsize);
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) == 0) {
@@ -4613,7 +4613,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			sctp_feature_off(inp, SCTP_PCB_FLAGS_PORTREUSE);
 		break;
 	}
-	case SCTP_PARTIAL_DELIVERY_POINT:
+	case USR_SCTP_PARTIAL_DELIVERY_POINT:
 	{
 		uint32_t *value;
 
@@ -4626,7 +4626,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		inp->partial_delivery_point = *value;
 		break;
 	}
-	case SCTP_FRAGMENT_INTERLEAVE:
+	case USR_SCTP_FRAGMENT_INTERLEAVE:
 		/* not yet until we re-write sctp_recvmsg() */
 	{
 		uint32_t *level;
@@ -4650,9 +4650,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_INTERLEAVING_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4663,7 +4663,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (av->assoc_value == 0) {
 					inp->idata_supported = 0;
@@ -4687,10 +4687,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_CMT_ON_OFF:
 		if (SCTP_BASE_SYSCTL(sctp_cmt_on_off)) {
-			struct sctp_assoc_value *av;
+			struct usrsctp_assoc_value *av;
 
-			SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
-			if (av->assoc_value > SCTP_CMT_MAX) {
+			SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
+			if (av->assoc_value > USR_SCTP_CMT_MAX) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 				break;
@@ -4703,15 +4703,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 				    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-				     ((av->assoc_id == SCTP_FUTURE_ASSOC) ||
-				      (av->assoc_id == SCTP_ALL_ASSOC)))) {
+				     ((av->assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+				      (av->assoc_id == USR_SCTP_ALL_ASSOC)))) {
 					SCTP_INP_WLOCK(inp);
 					inp->sctp_cmt_on_off = av->assoc_value;
 					SCTP_INP_WUNLOCK(inp);
 				}
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-				    ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
-				     (av->assoc_id == SCTP_ALL_ASSOC))) {
+				    ((av->assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+				     (av->assoc_id == USR_SCTP_ALL_ASSOC))) {
 					SCTP_INP_RLOCK(inp);
 					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
@@ -4728,14 +4728,14 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		break;
 	case SCTP_PLUGGABLE_CC:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 		struct sctp_nets *net;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
-		if ((av->assoc_value != SCTP_CC_RFC2581) &&
-		    (av->assoc_value != SCTP_CC_HSTCP) &&
-		    (av->assoc_value != SCTP_CC_HTCP) &&
-		    (av->assoc_value != SCTP_CC_RTCC)) {
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
+		if ((av->assoc_value != USR_SCTP_CC_RFC2581) &&
+		    (av->assoc_value != USR_SCTP_CC_HSTCP) &&
+		    (av->assoc_value != USR_SCTP_CC_HTCP) &&
+		    (av->assoc_value != USR_SCTP_CC_RTCC)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 			break;
@@ -4754,15 +4754,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((av->assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (av->assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((av->assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (av->assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_ep.sctp_default_cc_module = av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (av->assoc_id == SCTP_ALL_ASSOC))) {
+			    ((av->assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (av->assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -4788,7 +4788,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_FIND_STCB(inp, stcb, cc_opt->aid_value.assoc_id);
 		if (stcb == NULL) {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    (cc_opt->aid_value.assoc_id == SCTP_CURRENT_ASSOC)) {
+			    (cc_opt->aid_value.assoc_id == USR_SCTP_CURRENT_ASSOC)) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -4814,10 +4814,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_STREAM_SCHEDULER:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
-		if ((av->assoc_value != SCTP_SS_DEFAULT) &&
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
+		if ((av->assoc_value != USR_SCTP_SS_DEFAULT) &&
 		    (av->assoc_value != SCTP_SS_RR) &&
 		    (av->assoc_value != SCTP_SS_RR_PKT) &&
 		    (av->assoc_value != SCTP_SS_PRIO) &&
@@ -4838,15 +4838,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((av->assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (av->assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((av->assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (av->assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_ep.sctp_default_ss_module = av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (av->assoc_id == SCTP_ALL_ASSOC))) {
+			    ((av->assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (av->assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -4863,9 +4863,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_STREAM_SCHEDULER_VALUE:
 	{
-		struct sctp_stream_value *av;
+		struct usrsctp_stream_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_stream_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_stream_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 		if (stcb) {
 			if ((av->stream_id >= stcb->asoc.streamoutcnt) ||
@@ -4877,7 +4877,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			SCTP_TCB_UNLOCK(stcb);
 		} else {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    (av->assoc_id == SCTP_CURRENT_ASSOC)) {
+			    (av->assoc_id == USR_SCTP_CURRENT_ASSOC)) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -4902,11 +4902,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);
 		error = EOPNOTSUPP;
 		break;
-	case SCTP_CONTEXT:
+	case USR_SCTP_CONTEXT:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -4916,15 +4916,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((av->assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (av->assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((av->assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (av->assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_context = av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (av->assoc_id == SCTP_ALL_ASSOC))) {
+			    ((av->assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (av->assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5074,11 +5074,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #endif
 		break;
 	}
-	case SCTP_DELAYED_SACK:
+	case USR_SCTP_DELAYED_SACK:
 	{
-		struct sctp_sack_info *sack;
+		struct usrsctp_sack_info *sack;
 
-		SCTP_CHECK_AND_CAST(sack, optval, struct sctp_sack_info, optsize);
+		SCTP_CHECK_AND_CAST(sack, optval, struct usrsctp_sack_info, optsize);
 		SCTP_FIND_STCB(inp, stcb, sack->sack_assoc_id);
 		if (sack->sack_delay) {
 			if (sack->sack_delay > SCTP_MAX_SACK_DELAY) {
@@ -5101,8 +5101,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((sack->sack_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (sack->sack_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((sack->sack_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (sack->sack_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				if (sack->sack_delay) {
 					inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_RECV] = sctp_msecs_to_ticks(sack->sack_delay);
@@ -5113,8 +5113,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((sack->sack_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (sack->sack_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((sack->sack_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (sack->sack_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5131,11 +5131,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_AUTH_CHUNK:
+	case USR_SCTP_AUTH_CHUNK:
 	{
-		struct sctp_authchunk *sauth;
+		struct usrsctp_authchunk *sauth;
 
-		SCTP_CHECK_AND_CAST(sauth, optval, struct sctp_authchunk, optsize);
+		SCTP_CHECK_AND_CAST(sauth, optval, struct usrsctp_authchunk, optsize);
 
 		SCTP_INP_WLOCK(inp);
 		if (sctp_auth_add_chunk(sauth->sauth_chunk, inp->sctp_ep.local_auth_chunks)) {
@@ -5147,19 +5147,19 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
-	case SCTP_AUTH_KEY:
+	case USR_SCTP_AUTH_KEY:
 	{
-		struct sctp_authkey *sca;
+		struct usrsctp_authkey *sca;
 		struct sctp_keyhead *shared_keys;
 		sctp_sharedkey_t *shared_key;
 		sctp_key_t *key = NULL;
 		size_t size;
 
-		SCTP_CHECK_AND_CAST(sca, optval, struct sctp_authkey, optsize);
+		SCTP_CHECK_AND_CAST(sca, optval, struct usrsctp_authkey, optsize);
 		if (sca->sca_keylength == 0) {
-			size = optsize - sizeof(struct sctp_authkey);
+			size = optsize - sizeof(struct usrsctp_authkey);
 		} else {
-			if (sca->sca_keylength + sizeof(struct sctp_authkey) <= optsize) {
+			if (sca->sca_keylength + sizeof(struct usrsctp_authkey) <= optsize) {
 				size = sca->sca_keylength;
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -5202,8 +5202,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((sca->sca_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (sca->sca_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((sca->sca_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (sca->sca_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				shared_keys = &inp->sctp_ep.shared_keys;
 				/*
@@ -5238,8 +5238,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((sca->sca_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (sca->sca_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((sca->sca_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (sca->sca_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5273,15 +5273,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_HMAC_IDENT:
+	case USR_SCTP_HMAC_IDENT:
 	{
-		struct sctp_hmacalgo *shmac;
+		struct usrsctp_hmacalgo *shmac;
 		sctp_hmaclist_t *hmaclist;
 		uint16_t hmacid;
 		uint32_t i;
 
-		SCTP_CHECK_AND_CAST(shmac, optval, struct sctp_hmacalgo, optsize);
-		if ((optsize < sizeof(struct sctp_hmacalgo) + shmac->shmac_number_of_idents * sizeof(uint16_t)) ||
+		SCTP_CHECK_AND_CAST(shmac, optval, struct usrsctp_hmacalgo, optsize);
+		if ((optsize < sizeof(struct usrsctp_hmacalgo) + shmac->shmac_number_of_idents * sizeof(uint16_t)) ||
 		    (shmac->shmac_number_of_idents > 0xffff)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
@@ -5305,7 +5305,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			}
 		}
 		for (i = 0; i < hmaclist->num_algo; i++) {
-			if (hmaclist->hmac[i] == SCTP_AUTH_HMAC_ID_SHA1) {
+			if (hmaclist->hmac[i] == USR_SCTP_AUTH_HMAC_ID_SHA1) {
 				/* already in list */
 				break;
 			}
@@ -5326,11 +5326,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	sctp_set_hmac_done:
 		break;
 	}
-	case SCTP_AUTH_ACTIVE_KEY:
+	case USR_SCTP_AUTH_ACTIVE_KEY:
 	{
-		struct sctp_authkeyid *scact;
+		struct usrsctp_authkeyid *scact;
 
-		SCTP_CHECK_AND_CAST(scact, optval, struct sctp_authkeyid, optsize);
+		SCTP_CHECK_AND_CAST(scact, optval, struct usrsctp_authkeyid, optsize);
 		SCTP_FIND_STCB(inp, stcb, scact->scact_assoc_id);
 
 		/* set the active key on the right place */
@@ -5348,8 +5348,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((scact->scact_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (scact->scact_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((scact->scact_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (scact->scact_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				if (sctp_auth_setactivekey_ep(inp, scact->scact_keynumber)) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -5358,8 +5358,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((scact->scact_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (scact->scact_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((scact->scact_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (scact->scact_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5371,11 +5371,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_AUTH_DELETE_KEY:
+	case USR_SCTP_AUTH_DELETE_KEY:
 	{
-		struct sctp_authkeyid *scdel;
+		struct usrsctp_authkeyid *scdel;
 
-		SCTP_CHECK_AND_CAST(scdel, optval, struct sctp_authkeyid, optsize);
+		SCTP_CHECK_AND_CAST(scdel, optval, struct usrsctp_authkeyid, optsize);
 		SCTP_FIND_STCB(inp, stcb, scdel->scact_assoc_id);
 
 		/* delete the key from the right place */
@@ -5389,8 +5389,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((scdel->scact_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (scdel->scact_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((scdel->scact_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (scdel->scact_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				if (sctp_delete_sharedkey_ep(inp, scdel->scact_keynumber)) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -5399,8 +5399,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((scdel->scact_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (scdel->scact_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((scdel->scact_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (scdel->scact_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5412,11 +5412,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_AUTH_DEACTIVATE_KEY:
+	case USR_SCTP_AUTH_DEACTIVATE_KEY:
 	{
-		struct sctp_authkeyid *keyid;
+		struct usrsctp_authkeyid *keyid;
 
-		SCTP_CHECK_AND_CAST(keyid, optval, struct sctp_authkeyid, optsize);
+		SCTP_CHECK_AND_CAST(keyid, optval, struct usrsctp_authkeyid, optsize);
 		SCTP_FIND_STCB(inp, stcb, keyid->scact_assoc_id);
 
 		/* deactivate the key from the right place */
@@ -5430,8 +5430,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((keyid->scact_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (keyid->scact_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((keyid->scact_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (keyid->scact_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				if (sctp_deact_sharedkey_ep(inp, keyid->scact_keynumber)) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -5440,8 +5440,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((keyid->scact_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (keyid->scact_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((keyid->scact_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (keyid->scact_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5455,10 +5455,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_ENABLE_STREAM_RESET:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
-		if (av->assoc_value & (~SCTP_ENABLE_VALUE_MASK)) {
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
+		if (av->assoc_value & (~USR_SCTP_ENABLE_VALUE_MASK)) {
 		        SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 			break;
@@ -5471,15 +5471,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((av->assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (av->assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((av->assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (av->assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->local_strreset_support = (uint8_t)av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (av->assoc_id == SCTP_ALL_ASSOC))) {
+			    ((av->assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (av->assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5491,13 +5491,13 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_RESET_STREAMS:
+	case USR_SCTP_RESET_STREAMS:
 	{
-		struct sctp_reset_streams *strrst;
+		struct usrsctp_reset_streams *strrst;
 		int i, send_out = 0;
 		int send_in = 0;
 
-		SCTP_CHECK_AND_CAST(strrst, optval, struct sctp_reset_streams, optsize);
+		SCTP_CHECK_AND_CAST(strrst, optval, struct usrsctp_reset_streams, optsize);
 		SCTP_FIND_STCB(inp, stcb, strrst->srs_assoc_id);
 		if (stcb == NULL) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
@@ -5519,13 +5519,13 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
-		if (sizeof(struct sctp_reset_streams) +
+		if (sizeof(struct usrsctp_reset_streams) +
 		    strrst->srs_number_streams * sizeof(uint16_t) > optsize) {
 			error = EINVAL;
 			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
-		if (strrst->srs_flags & SCTP_STREAM_RESET_INCOMING) {
+		if (strrst->srs_flags & USR_SCTP_STREAM_RESET_INCOMING) {
 			send_in = 1;
 			if (stcb->asoc.stream_reset_outstanding) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EALREADY);
@@ -5534,7 +5534,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				break;
 			}
 		}
-		if (strrst->srs_flags & SCTP_STREAM_RESET_OUTGOING) {
+		if (strrst->srs_flags & USR_SCTP_STREAM_RESET_OUTGOING) {
 			send_out = 1;
 		}
 		if ((strrst->srs_number_streams > SCTP_MAX_STREAMS_AT_ONCE_RESET) && send_in) {
@@ -5608,14 +5608,14 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_TCB_UNLOCK(stcb);
 		break;
 	}
-	case SCTP_ADD_STREAMS:
+	case USR_SCTP_ADD_STREAMS:
 	{
-		struct sctp_add_streams *stradd;
+		struct usrsctp_add_streams *stradd;
 		uint8_t addstream = 0;
 		uint16_t add_o_strmcnt = 0;
 		uint16_t add_i_strmcnt = 0;
 
-		SCTP_CHECK_AND_CAST(stradd, optval, struct sctp_add_streams, optsize);
+		SCTP_CHECK_AND_CAST(stradd, optval, struct usrsctp_add_streams, optsize);
 		SCTP_FIND_STCB(inp, stcb, stradd->sas_assoc_id);
 		if (stcb == NULL) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
@@ -5683,13 +5683,13 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_TCB_UNLOCK(stcb);
 		break;
 	}
-	case SCTP_RESET_ASSOC:
+	case USR_SCTP_RESET_ASSOC:
 	{
 		int i;
 		uint32_t *value;
 
 		SCTP_CHECK_AND_CAST(value, optval, uint32_t, optsize);
-		SCTP_FIND_STCB(inp, stcb, (sctp_assoc_t) *value);
+		SCTP_FIND_STCB(inp, stcb, (usrsctp_assoc_t) *value);
 		if (stcb == NULL) {
 		        SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
 			error = ENOENT;
@@ -5802,11 +5802,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_TCB_UNLOCK(stcb);
 		break;
 	}
-	case SCTP_MAX_BURST:
+	case USR_SCTP_MAX_BURST:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -5816,15 +5816,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((av->assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (av->assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((av->assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (av->assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_ep.max_burst = av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (av->assoc_id == SCTP_ALL_ASSOC))) {
+			    ((av->assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (av->assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -5836,11 +5836,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_MAXSEG:
+	case USR_SCTP_MAXSEG:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -5850,7 +5850,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_frag_point = av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
@@ -5863,9 +5863,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_EVENTS:
 	{
-		struct sctp_event_subscribe *events;
+		struct usrsctp_event_subscribe *events;
 
-		SCTP_CHECK_AND_CAST(events, optval, struct sctp_event_subscribe, optsize);
+		SCTP_CHECK_AND_CAST(events, optval, struct usrsctp_event_subscribe, optsize);
 
 		SCTP_INP_WLOCK(inp);
 		if (events->sctp_data_io_event) {
@@ -5898,7 +5898,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			sctp_feature_off(inp, SCTP_PCB_FLAGS_RECVPEERERR);
 		}
 
-		if (events->sctp_shutdown_event) {
+		if (events->usrsctp_shutdown_event) {
 			sctp_feature_on(inp, SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT);
 		} else {
 			sctp_feature_off(inp, SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT);
@@ -5922,13 +5922,13 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			sctp_feature_off(inp, SCTP_PCB_FLAGS_AUTHEVNT);
 		}
 
-		if (events->sctp_sender_dry_event) {
+		if (events->usrsctp_sender_dry_event) {
 			sctp_feature_on(inp, SCTP_PCB_FLAGS_DRYEVNT);
 		} else {
 			sctp_feature_off(inp, SCTP_PCB_FLAGS_DRYEVNT);
 		}
 
-		if (events->sctp_stream_reset_event) {
+		if (events->usrsctp_stream_reset_event) {
 			sctp_feature_on(inp, SCTP_PCB_FLAGS_STREAM_RESETEVNT);
 		} else {
 			sctp_feature_off(inp, SCTP_PCB_FLAGS_STREAM_RESETEVNT);
@@ -5956,7 +5956,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			} else {
 				sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_RECVPEERERR);
 			}
-			if (events->sctp_shutdown_event) {
+			if (events->usrsctp_shutdown_event) {
 				sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT);
 			} else {
 				sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT);
@@ -5976,12 +5976,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			} else {
 				sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_AUTHEVNT);
 			}
-			if (events->sctp_sender_dry_event) {
+			if (events->usrsctp_sender_dry_event) {
 				sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DRYEVNT);
 			} else {
 				sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DRYEVNT);
 			}
-			if (events->sctp_stream_reset_event) {
+			if (events->usrsctp_stream_reset_event) {
 				sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_STREAM_RESETEVNT);
 			} else {
 				sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_STREAM_RESETEVNT);
@@ -5989,7 +5989,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			SCTP_TCB_UNLOCK(stcb);
 		}
 		/* Send up the sender dry event only for 1-to-1 style sockets. */
-		if (events->sctp_sender_dry_event) {
+		if (events->usrsctp_sender_dry_event) {
 			if (((inp->sctp_flags & (SCTP_PCB_FLAGS_TCPTYPE | SCTP_PCB_FLAGS_IN_TCPPOOL)) != 0) &&
 			    !SCTP_IS_LISTENING(inp)) {
 				stcb = LIST_FIRST(&inp->sctp_asoc_list);
@@ -6007,11 +6007,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
-	case SCTP_ADAPTATION_LAYER:
+	case USR_SCTP_ADAPTATION_LAYER:
 	{
-		struct sctp_setadaptation *adap_bits;
+		struct usrsctp_setadaptation *adap_bits;
 
-		SCTP_CHECK_AND_CAST(adap_bits, optval, struct sctp_setadaptation, optsize);
+		SCTP_CHECK_AND_CAST(adap_bits, optval, struct usrsctp_setadaptation, optsize);
 		SCTP_INP_WLOCK(inp);
 		inp->sctp_ep.adaptation_layer_indicator = adap_bits->ssb_adaptation_ind;
 		inp->sctp_ep.adaptation_layer_indicator_provided = 1;
@@ -6049,15 +6049,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((s_info->sinfo_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (s_info->sinfo_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((s_info->sinfo_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (s_info->sinfo_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				memcpy(&inp->def_send, s_info, min(optsize, sizeof(inp->def_send)));
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((s_info->sinfo_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (s_info->sinfo_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((s_info->sinfo_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (s_info->sinfo_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -6071,16 +6071,16 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_PEER_ADDR_PARAMS:
+	case USR_SCTP_PEER_ADDR_PARAMS:
 	{
-		struct sctp_paddrparams *paddrp;
+		struct usrsctp_paddrparams *paddrp;
 		struct sctp_nets *net;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(paddrp, optval, struct sctp_paddrparams, optsize);
+		SCTP_CHECK_AND_CAST(paddrp, optval, struct usrsctp_paddrparams, optsize);
 		SCTP_FIND_STCB(inp, stcb, paddrp->spp_assoc_id);
 
 #if defined(INET) && defined(INET6)
@@ -6163,20 +6163,20 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			}
 		}
 		/* sanity checks */
-		if ((paddrp->spp_flags & SPP_HB_ENABLE) && (paddrp->spp_flags & SPP_HB_DISABLE)) {
+		if ((paddrp->spp_flags & USR_SPP_HB_ENABLE) && (paddrp->spp_flags & USR_SPP_HB_DISABLE)) {
 			if (stcb)
 				SCTP_TCB_UNLOCK(stcb);
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			return (EINVAL);
 		}
 
-		if ((paddrp->spp_flags & SPP_PMTUD_ENABLE) && (paddrp->spp_flags & SPP_PMTUD_DISABLE)) {
+		if ((paddrp->spp_flags & USR_SPP_PMTUD_ENABLE) && (paddrp->spp_flags & USR_SPP_PMTUD_DISABLE)) {
 			if (stcb)
 				SCTP_TCB_UNLOCK(stcb);
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			return (EINVAL);
 		}
-		if ((paddrp->spp_flags & SPP_PMTUD_DISABLE) &&
+		if ((paddrp->spp_flags & USR_SPP_PMTUD_DISABLE) &&
 		    (paddrp->spp_pathmtu > 0) &&
 		    ((paddrp->spp_pathmtu < SCTP_SMALLEST_PMTU) ||
 		     (paddrp->spp_pathmtu > SCTP_LARGEST_PMTU))) {
@@ -6190,7 +6190,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			/************************TCB SPECIFIC SET ******************/
 			if (net != NULL) {
 				/************************NET SPECIFIC SET ******************/
-				if (paddrp->spp_flags & SPP_HB_DISABLE) {
+				if (paddrp->spp_flags & USR_SPP_HB_DISABLE) {
 					if (((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) &&
 					    ((net->dest_state & SCTP_ADDR_NOHB) == 0)) {
 						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
@@ -6198,10 +6198,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 					net->dest_state |= SCTP_ADDR_NOHB;
 				}
-				if (paddrp->spp_flags & SPP_HB_ENABLE) {
+				if (paddrp->spp_flags & USR_SPP_HB_ENABLE) {
 					if (paddrp->spp_hbinterval) {
 						net->heart_beat_delay = paddrp->spp_hbinterval;
-					} else if (paddrp->spp_flags & SPP_HB_TIME_IS_ZERO) {
+					} else if (paddrp->spp_flags & USR_SPP_HB_TIME_IS_ZERO) {
 						net->heart_beat_delay = 0;
 					}
 					sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
@@ -6209,14 +6209,14 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 					net->dest_state &= ~SCTP_ADDR_NOHB;
 				}
-				if (paddrp->spp_flags & SPP_HB_DEMAND) {
+				if (paddrp->spp_flags & USR_SPP_HB_DEMAND) {
 					if (SCTP_GET_STATE(stcb) == SCTP_STATE_OPEN) {
 						sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
 						sctp_chunk_output(inp, stcb,  SCTP_OUTPUT_FROM_SOCKOPT, SCTP_SO_LOCKED);
 						sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 					}
 				}
-				if (paddrp->spp_flags & SPP_PMTUD_DISABLE) {
+				if (paddrp->spp_flags & USR_SPP_PMTUD_DISABLE) {
 					if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 						sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
 						                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_11);
@@ -6248,7 +6248,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						}
 					}
 				}
-				if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
+				if (paddrp->spp_flags & USR_SPP_PMTUD_ENABLE) {
 					if (!SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 						sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
 					}
@@ -6283,12 +6283,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 					net->failure_threshold = paddrp->spp_pathmaxrxt;
 				}
-				if (paddrp->spp_flags & SPP_DSCP) {
+				if (paddrp->spp_flags & USR_SPP_DSCP) {
 					net->dscp = paddrp->spp_dscp & 0xfc;
 					net->dscp |= 0x01;
 				}
 #ifdef INET6
-				if (paddrp->spp_flags & SPP_IPV6_FLOWLABEL) {
+				if (paddrp->spp_flags & USR_SPP_IPV6_FLOWLABEL) {
 					if (net->ro._l_addr.sa.sa_family == AF_INET6) {
 						net->flowlabel = paddrp->spp_ipv6_flowlabel & 0x000fffff;
 						net->flowlabel |= 0x80000000;
@@ -6329,17 +6329,17 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						net->failure_threshold = paddrp->spp_pathmaxrxt;
 					}
 				}
-				if (paddrp->spp_flags & SPP_HB_ENABLE) {
+				if (paddrp->spp_flags & USR_SPP_HB_ENABLE) {
 					if (paddrp->spp_hbinterval != 0) {
 						stcb->asoc.heart_beat_delay = paddrp->spp_hbinterval;
-					} else if (paddrp->spp_flags & SPP_HB_TIME_IS_ZERO) {
+					} else if (paddrp->spp_flags & USR_SPP_HB_TIME_IS_ZERO) {
 						stcb->asoc.heart_beat_delay = 0;
 					}
 					/* Turn back on the timer */
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (paddrp->spp_hbinterval != 0) {
 							net->heart_beat_delay = paddrp->spp_hbinterval;
-						} else if (paddrp->spp_flags & SPP_HB_TIME_IS_ZERO) {
+						} else if (paddrp->spp_flags & USR_SPP_HB_TIME_IS_ZERO) {
 							net->heart_beat_delay = 0;
 						}
 						if (net->dest_state & SCTP_ADDR_NOHB) {
@@ -6351,7 +6351,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 					sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
 				}
-				if (paddrp->spp_flags & SPP_HB_DISABLE) {
+				if (paddrp->spp_flags & USR_SPP_HB_DISABLE) {
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if ((net->dest_state & SCTP_ADDR_NOHB) == 0) {
 							net->dest_state |= SCTP_ADDR_NOHB;
@@ -6364,7 +6364,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 					sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
 				}
-				if (paddrp->spp_flags & SPP_PMTUD_DISABLE) {
+				if (paddrp->spp_flags & USR_SPP_PMTUD_DISABLE) {
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 							sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
@@ -6402,7 +6402,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 					sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 				}
-				if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
+				if (paddrp->spp_flags & USR_SPP_PMTUD_ENABLE) {
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (!SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 							sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
@@ -6412,7 +6412,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					stcb->asoc.default_mtu = 0;
 					sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 				}
-				if (paddrp->spp_flags & SPP_DSCP) {
+				if (paddrp->spp_flags & USR_SPP_DSCP) {
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						net->dscp = paddrp->spp_dscp & 0xfc;
 						net->dscp |= 0x01;
@@ -6421,7 +6421,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					stcb->asoc.default_dscp |= 0x01;
 				}
 #ifdef INET6
-				if (paddrp->spp_flags & SPP_IPV6_FLOWLABEL) {
+				if (paddrp->spp_flags & USR_SPP_IPV6_FLOWLABEL) {
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (net->ro._l_addr.sa.sa_family == AF_INET6) {
 							net->flowlabel = paddrp->spp_ipv6_flowlabel & 0x000fffff;
@@ -6439,7 +6439,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (paddrp->spp_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (paddrp->spp_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				/*
 				 * For the TOS/FLOWLABEL stuff you set it
@@ -6449,7 +6449,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					inp->sctp_ep.def_net_failure = paddrp->spp_pathmaxrxt;
 				}
 
-				if (paddrp->spp_flags & SPP_HB_TIME_IS_ZERO)
+				if (paddrp->spp_flags & USR_SPP_HB_TIME_IS_ZERO)
 					inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_HEARTBEAT] = 0;
 				else if (paddrp->spp_hbinterval != 0) {
 					if (paddrp->spp_hbinterval > SCTP_MAX_HB_INTERVAL)
@@ -6457,31 +6457,31 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_HEARTBEAT] = sctp_msecs_to_ticks(paddrp->spp_hbinterval);
 				}
 
-				if (paddrp->spp_flags & SPP_HB_ENABLE) {
-					if (paddrp->spp_flags & SPP_HB_TIME_IS_ZERO) {
+				if (paddrp->spp_flags & USR_SPP_HB_ENABLE) {
+					if (paddrp->spp_flags & USR_SPP_HB_TIME_IS_ZERO) {
 						inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_HEARTBEAT] = 0;
 					} else if (paddrp->spp_hbinterval) {
 						inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_HEARTBEAT] = sctp_msecs_to_ticks(paddrp->spp_hbinterval);
 					}
 					sctp_feature_off(inp, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
-				} else if (paddrp->spp_flags & SPP_HB_DISABLE) {
+				} else if (paddrp->spp_flags & USR_SPP_HB_DISABLE) {
 					sctp_feature_on(inp, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
 				}
-				if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
+				if (paddrp->spp_flags & USR_SPP_PMTUD_ENABLE) {
 					inp->sctp_ep.default_mtu = 0;
 					sctp_feature_off(inp, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
-				} else if (paddrp->spp_flags & SPP_PMTUD_DISABLE) {
+				} else if (paddrp->spp_flags & USR_SPP_PMTUD_DISABLE) {
 					if (paddrp->spp_pathmtu > 0) {
 						inp->sctp_ep.default_mtu = paddrp->spp_pathmtu;
 					}
 					sctp_feature_on(inp, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 				}
-				if (paddrp->spp_flags & SPP_DSCP) {
+				if (paddrp->spp_flags & USR_SPP_DSCP) {
 					inp->sctp_ep.default_dscp = paddrp->spp_dscp & 0xfc;
 					inp->sctp_ep.default_dscp |= 0x01;
 				}
 #ifdef INET6
-				if (paddrp->spp_flags & SPP_IPV6_FLOWLABEL) {
+				if (paddrp->spp_flags & USR_SPP_IPV6_FLOWLABEL) {
 					if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 						inp->sctp_ep.default_flowlabel = paddrp->spp_ipv6_flowlabel & 0x000fffff;
 						inp->sctp_ep.default_flowlabel |= 0x80000000;
@@ -6496,12 +6496,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_RTOINFO:
+	case USR_SCTP_RTOINFO:
 	{
-		struct sctp_rtoinfo *srto;
+		struct usrsctp_rtoinfo *srto;
 		uint32_t new_init, new_min, new_max;
 
-		SCTP_CHECK_AND_CAST(srto, optval, struct sctp_rtoinfo, optsize);
+		SCTP_CHECK_AND_CAST(srto, optval, struct usrsctp_rtoinfo, optsize);
 		SCTP_FIND_STCB(inp, stcb, srto->srto_assoc_id);
 
 		if (stcb) {
@@ -6530,7 +6530,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (srto->srto_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (srto->srto_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (srto->srto_initial)
 					new_init = srto->srto_initial;
@@ -6560,11 +6560,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_ASSOCINFO:
+	case USR_SCTP_ASSOCINFO:
 	{
-		struct sctp_assocparams *sasoc;
+		struct usrsctp_assocparams *sasoc;
 
-		SCTP_CHECK_AND_CAST(sasoc, optval, struct sctp_assocparams, optsize);
+		SCTP_CHECK_AND_CAST(sasoc, optval, struct usrsctp_assocparams, optsize);
 		SCTP_FIND_STCB(inp, stcb, sasoc->sasoc_assoc_id);
 		if (sasoc->sasoc_cookie_life > 0) {
 			/* boundary check the cookie life */
@@ -6587,7 +6587,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (sasoc->sasoc_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (sasoc->sasoc_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (sasoc->sasoc_asocmaxrxt > 0) {
 					inp->sctp_ep.max_send_times = sasoc->sasoc_asocmaxrxt;
@@ -6603,11 +6603,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_INITMSG:
+	case USR_SCTP_INITMSG:
 	{
-		struct sctp_initmsg *sinit;
+		struct usrsctp_initmsg *sinit;
 
-		SCTP_CHECK_AND_CAST(sinit, optval, struct sctp_initmsg, optsize);
+		SCTP_CHECK_AND_CAST(sinit, optval, struct usrsctp_initmsg, optsize);
 		SCTP_INP_WLOCK(inp);
 		if (sinit->sinit_num_ostreams)
 			inp->sctp_ep.pre_open_stream_count = sinit->sinit_num_ostreams;
@@ -6623,16 +6623,16 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
-	case SCTP_PRIMARY_ADDR:
+	case USR_SCTP_PRIMARY_ADDR:
 	{
-		struct sctp_setprim *spa;
+		struct usrsctp_setprim *spa;
 		struct sctp_nets *net;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(spa, optval, struct sctp_setprim, optsize);
+		SCTP_CHECK_AND_CAST(spa, optval, struct usrsctp_setprim, optsize);
 		SCTP_FIND_STCB(inp, stcb, spa->ssp_assoc_id);
 
 #if defined(INET) && defined(INET6)
@@ -6742,15 +6742,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		error = sctp_dynamic_set_primary(&ss->sa, vrf_id);
 		break;
 	}
-	case SCTP_SET_PEER_PRIMARY_ADDR:
+	case USR_SCTP_SET_PEER_PRIMARY_ADDR:
 	{
-		struct sctp_setpeerprim *sspp;
+		struct usrsctp_setpeerprim *sspp;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(sspp, optval, struct sctp_setpeerprim, optsize);
+		SCTP_CHECK_AND_CAST(sspp, optval, struct usrsctp_setpeerprim, optsize);
 		SCTP_FIND_STCB(inp, stcb, sspp->sspp_assoc_id);
 		if (stcb != NULL) {
 			struct sctp_ifa *ifa;
@@ -6969,56 +6969,56 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 #endif
-	case SCTP_EVENT:
+	case USR_SCTP_EVENT:
 	{
-		struct sctp_event *event;
+		struct usrsctp_event *event;
 		uint32_t event_type;
 
-		SCTP_CHECK_AND_CAST(event, optval, struct sctp_event, optsize);
+		SCTP_CHECK_AND_CAST(event, optval, struct usrsctp_event, optsize);
 		SCTP_FIND_STCB(inp, stcb, event->se_assoc_id);
 		switch (event->se_type) {
-		case SCTP_ASSOC_CHANGE:
+		case USR_SCTP_ASSOC_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVASSOCEVNT;
 			break;
-		case SCTP_PEER_ADDR_CHANGE:
+		case USR_SCTP_PEER_ADDR_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVPADDREVNT;
 			break;
-		case SCTP_REMOTE_ERROR:
+		case USR_SCTP_REMOTE_ERROR:
 			event_type = SCTP_PCB_FLAGS_RECVPEERERR;
 			break;
-		case SCTP_SEND_FAILED:
+		case USR_SCTP_SEND_FAILED:
 			event_type = SCTP_PCB_FLAGS_RECVSENDFAILEVNT;
 			break;
-		case SCTP_SHUTDOWN_EVENT:
+		case USR_SCTP_SHUTDOWN_EVENT:
 			event_type = SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT;
 			break;
-		case SCTP_ADAPTATION_INDICATION:
+		case USR_SCTP_ADAPTATION_INDICATION:
 			event_type = SCTP_PCB_FLAGS_ADAPTATIONEVNT;
 			break;
-		case SCTP_PARTIAL_DELIVERY_EVENT:
+		case USR_SCTP_PARTIAL_DELIVERY_EVENT:
 			event_type = SCTP_PCB_FLAGS_PDAPIEVNT;
 			break;
-		case SCTP_AUTHENTICATION_EVENT:
+		case USR_SCTP_AUTHENTICATION_EVENT:
 			event_type = SCTP_PCB_FLAGS_AUTHEVNT;
 			break;
-		case SCTP_STREAM_RESET_EVENT:
+		case USR_SCTP_STREAM_RESET_EVENT:
 			event_type = SCTP_PCB_FLAGS_STREAM_RESETEVNT;
 			break;
-		case SCTP_SENDER_DRY_EVENT:
+		case USR_SCTP_SENDER_DRY_EVENT:
 			event_type = SCTP_PCB_FLAGS_DRYEVNT;
 			break;
-		case SCTP_NOTIFICATIONS_STOPPED_EVENT:
+		case USR_SCTP_NOTIFICATIONS_STOPPED_EVENT:
 			event_type = 0;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
 			error = ENOTSUP;
 			break;
-		case SCTP_ASSOC_RESET_EVENT:
+		case USR_SCTP_ASSOC_RESET_EVENT:
 			event_type = SCTP_PCB_FLAGS_ASSOC_RESETEVNT;
 			break;
-		case SCTP_STREAM_CHANGE_EVENT:
+		case USR_SCTP_STREAM_CHANGE_EVENT:
 			event_type = SCTP_PCB_FLAGS_STREAM_CHANGEEVNT;
 			break;
-		case SCTP_SEND_FAILED_EVENT:
+		case USR_SCTP_SEND_FAILED_EVENT:
 			event_type = SCTP_PCB_FLAGS_RECVNSENDFAILEVNT;
 			break;
 		default:
@@ -7049,8 +7049,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				 */
 				if ((event_type == SCTP_PCB_FLAGS_DRYEVNT) &&
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-				    ((event->se_assoc_id == SCTP_ALL_ASSOC) ||
-				     (event->se_assoc_id == SCTP_CURRENT_ASSOC))) {
+				    ((event->se_assoc_id == USR_SCTP_ALL_ASSOC) ||
+				     (event->se_assoc_id == USR_SCTP_CURRENT_ASSOC))) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
 					error = ENOTSUP;
 					break;
@@ -7058,8 +7058,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 				    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-				     ((event->se_assoc_id == SCTP_FUTURE_ASSOC) ||
-				      (event->se_assoc_id == SCTP_ALL_ASSOC)))) {
+				     ((event->se_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+				      (event->se_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 					SCTP_INP_WLOCK(inp);
 					if (event->se_on) {
 						sctp_feature_on(inp, event_type);
@@ -7069,8 +7069,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					SCTP_INP_WUNLOCK(inp);
 				}
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-				    ((event->se_assoc_id == SCTP_CURRENT_ASSOC) ||
-				     (event->se_assoc_id == SCTP_ALL_ASSOC))) {
+				    ((event->se_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+				     (event->se_assoc_id == USR_SCTP_ALL_ASSOC))) {
 					SCTP_INP_RLOCK(inp);
 					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
@@ -7091,7 +7091,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_RECVRCVINFO:
+	case USR_SCTP_RECVRCVINFO:
 	{
 		int *onoff;
 
@@ -7105,7 +7105,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
-	case SCTP_RECVNXTINFO:
+	case USR_SCTP_RECVNXTINFO:
 	{
 		int *onoff;
 
@@ -7119,12 +7119,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
-	case SCTP_DEFAULT_SNDINFO:
+	case USR_SCTP_DEFAULT_SNDINFO:
 	{
-		struct sctp_sndinfo *info;
+		struct usrsctp_sndinfo *info;
 		uint16_t policy;
 
-		SCTP_CHECK_AND_CAST(info, optval, struct sctp_sndinfo, optsize);
+		SCTP_CHECK_AND_CAST(info, optval, struct usrsctp_sndinfo, optsize);
 		SCTP_FIND_STCB(inp, stcb, info->snd_assoc_id);
 
 		if (stcb) {
@@ -7144,8 +7144,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((info->snd_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (info->snd_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((info->snd_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (info->snd_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->def_send.sinfo_stream = info->snd_sid;
 				policy = PR_SCTP_POLICY(inp->def_send.sinfo_flags);
@@ -7156,8 +7156,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((info->snd_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (info->snd_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((info->snd_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (info->snd_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -7176,11 +7176,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_DEFAULT_PRINFO:
+	case USR_SCTP_DEFAULT_PRINFO:
 	{
-		struct sctp_default_prinfo *info;
+		struct usrsctp_default_prinfo *info;
 
-		SCTP_CHECK_AND_CAST(info, optval, struct sctp_default_prinfo, optsize);
+		SCTP_CHECK_AND_CAST(info, optval, struct usrsctp_default_prinfo, optsize);
 		SCTP_FIND_STCB(inp, stcb, info->pr_assoc_id);
 
 		if (info->pr_policy > SCTP_PR_SCTP_MAX) {
@@ -7200,8 +7200,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     ((info->pr_assoc_id == SCTP_FUTURE_ASSOC) ||
-			      (info->pr_assoc_id == SCTP_ALL_ASSOC)))) {
+			     ((info->pr_assoc_id == USR_SCTP_FUTURE_ASSOC) ||
+			      (info->pr_assoc_id == USR_SCTP_ALL_ASSOC)))) {
 				SCTP_INP_WLOCK(inp);
 				inp->def_send.sinfo_flags &= 0xfff0;
 				inp->def_send.sinfo_flags |= info->pr_policy;
@@ -7209,8 +7209,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_WUNLOCK(inp);
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			    ((info->pr_assoc_id == SCTP_CURRENT_ASSOC) ||
-			     (info->pr_assoc_id == SCTP_ALL_ASSOC))) {
+			    ((info->pr_assoc_id == USR_SCTP_CURRENT_ASSOC) ||
+			     (info->pr_assoc_id == USR_SCTP_ALL_ASSOC))) {
 				SCTP_INP_RLOCK(inp);
 				LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 					SCTP_TCB_LOCK(stcb);
@@ -7395,7 +7395,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (thlds->spt_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (thlds->spt_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_ep.def_net_failure = thlds->spt_pathmaxrxt;
 				inp->sctp_ep.def_net_pf_threshold = thlds->spt_pathpfthld;
@@ -7407,16 +7407,16 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_REMOTE_UDP_ENCAPS_PORT:
+	case USR_SCTP_REMOTE_UDP_ENCAPS_PORT:
 	{
-		struct sctp_udpencaps *encaps;
+		struct usrsctp_udpencaps *encaps;
 		struct sctp_nets *net;
 		struct sockaddr *addr;
 #if defined(INET) && defined(INET6)
 		struct sockaddr_in sin_store;
 #endif
 
-		SCTP_CHECK_AND_CAST(encaps, optval, struct sctp_udpencaps, optsize);
+		SCTP_CHECK_AND_CAST(encaps, optval, struct usrsctp_udpencaps, optsize);
 		SCTP_FIND_STCB(inp, stcb, encaps->sue_assoc_id);
 
 #if defined(INET) && defined(INET6)
@@ -7509,7 +7509,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (encaps->sue_assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (encaps->sue_assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				inp->sctp_ep.port = encaps->sue_port;
 				SCTP_INP_WUNLOCK(inp);
@@ -7520,11 +7520,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_ECN_SUPPORTED:
+	case USR_SCTP_ECN_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7535,7 +7535,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (av->assoc_value == 0) {
 					inp->ecn_supported = 0;
@@ -7550,11 +7550,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_PR_SUPPORTED:
+	case USR_SCTP_PR_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7565,7 +7565,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (av->assoc_value == 0) {
 					inp->prsctp_supported = 0;
@@ -7580,11 +7580,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_AUTH_SUPPORTED:
+	case USR_SCTP_AUTH_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7595,7 +7595,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				if ((av->assoc_value == 0) &&
 				    (inp->asconf_supported == 1)) {
 				    	/* AUTH is required for ASCONF */
@@ -7617,11 +7617,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_ASCONF_SUPPORTED:
+	case USR_SCTP_ASCONF_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7632,7 +7632,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				if ((av->assoc_value != 0) &&
 				    (inp->auth_supported == 0)) {
 				    	/* AUTH is required for ASCONF */
@@ -7642,15 +7642,15 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					SCTP_INP_WLOCK(inp);
 					if (av->assoc_value == 0) {
 						inp->asconf_supported = 0;
-						sctp_auth_delete_chunk(SCTP_ASCONF,
+						sctp_auth_delete_chunk(USR_SCTP_ASCONF,
 						                       inp->sctp_ep.local_auth_chunks);
-						sctp_auth_delete_chunk(SCTP_ASCONF_ACK,
+						sctp_auth_delete_chunk(USR_SCTP_ASCONF_ACK,
 						                       inp->sctp_ep.local_auth_chunks);
 					} else {
 						inp->asconf_supported = 1;
-						sctp_auth_add_chunk(SCTP_ASCONF,
+						sctp_auth_add_chunk(USR_SCTP_ASCONF,
 						                    inp->sctp_ep.local_auth_chunks);
-						sctp_auth_add_chunk(SCTP_ASCONF_ACK,
+						sctp_auth_add_chunk(USR_SCTP_ASCONF_ACK,
 						                    inp->sctp_ep.local_auth_chunks);
 					}
 					SCTP_INP_WUNLOCK(inp);
@@ -7662,11 +7662,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_RECONFIG_SUPPORTED:
+	case USR_SCTP_RECONFIG_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7677,7 +7677,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (av->assoc_value == 0) {
 					inp->reconfig_supported = 0;
@@ -7692,11 +7692,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_NRSACK_SUPPORTED:
+	case USR_SCTP_NRSACK_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7707,7 +7707,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (av->assoc_value == 0) {
 					inp->nrsack_supported = 0;
@@ -7722,11 +7722,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_PKTDROP_SUPPORTED:
+	case USR_SCTP_PKTDROP_SUPPORTED:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7737,7 +7737,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				if (av->assoc_value == 0) {
 					inp->pktdrop_supported = 0;
@@ -7752,12 +7752,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_MAX_CWND:
+	case USR_SCTP_MAX_CWND:
 	{
-		struct sctp_assoc_value *av;
+		struct usrsctp_assoc_value *av;
 		struct sctp_nets *net;
 
-		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
+		SCTP_CHECK_AND_CAST(av, optval, struct usrsctp_assoc_value, optsize);
 		SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 
 		if (stcb) {
@@ -7778,7 +7778,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-			     (av->assoc_id == SCTP_FUTURE_ASSOC))) {
+			     (av->assoc_id == USR_SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
 				inp->max_cwnd = av->assoc_value;
 				SCTP_INP_WUNLOCK(inp);
@@ -7789,13 +7789,13 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		break;
 	}
-	case SCTP_ACCEPT_ZERO_CHECKSUM:
+	case USR_SCTP_ACCEPT_ZERO_CHECKSUM:
 	{
 		uint32_t *value;
 
 		SCTP_CHECK_AND_CAST(value, optval, uint32_t, optsize);
-		if ((*value == SCTP_EDMID_NONE) ||
-		    (*value == SCTP_EDMID_LOWER_LAYER_DTLS)) {
+		if ((*value == USR_SCTP_EDMID_NONE) ||
+		    (*value == USR_SCTP_EDMID_LOWER_LAYER_DTLS)) {
 			SCTP_INP_WLOCK(inp);
 			inp->rcv_edmid = *value;
 			SCTP_INP_WUNLOCK(inp);
@@ -8970,7 +8970,7 @@ struct pr_usrreqs sctp_usrreqs = {
 int
 register_recv_cb(struct socket *so,
                  int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info))
+                 size_t datalen, struct usrsctp_rcvinfo, int flags, void *ulp_info))
 {
 	struct sctp_inpcb *inp;
 

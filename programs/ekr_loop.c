@@ -162,11 +162,11 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	debug_printf("MSG RCV: %p received on sock = %p.\n", data, (void *)sock);
 	if (data) {
-		if ((flags & MSG_NOTIFICATION) == 0) {
+		if ((flags & USR_MSG_NOTIFICATION) == 0) {
 			debug_printf("MSG RCV: length %d, addr %p:%u, stream %u, SSN %u, TSN %u, PPID %u, context %u, %s%s.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
@@ -176,7 +176,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_tsn,
 			       ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context,
-			       (rcv.rcv_flags & SCTP_UNORDERED) ? "unordered" : "ordered",
+			       (rcv.rcv_flags & USR_SCTP_UNORDERED) ? "unordered" : "ordered",
 				   (flags & MSG_EOR) ? ", EOR" : "");
 		}
 		free(data);
@@ -330,7 +330,7 @@ main(int argc, char *argv[])
 {
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
-	struct sctp_paddrparams paddrparams;
+	struct usrsctp_paddrparams paddrparams;
 #ifdef _WIN32
 	SOCKET fd_c, fd_s;
 #else
@@ -344,7 +344,7 @@ main(int argc, char *argv[])
 #endif
 	int i, j, cur_buf_size, snd_buf_size, rcv_buf_size, sendv_retries_left;
 	socklen_t opt_len;
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 	char *line;
 #ifdef _WIN32
 	WSADATA wsaData;
@@ -502,14 +502,14 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	debug_printf_clean("to %d.\n", cur_buf_size);
-	memset(&paddrparams, 0, sizeof(struct sctp_paddrparams));
+	memset(&paddrparams, 0, sizeof(struct usrsctp_paddrparams));
 	paddrparams.spp_address.ss_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
 	paddrparams.spp_address.ss_len = sizeof(struct sockaddr_conn);
 #endif
-	paddrparams.spp_flags = SPP_PMTUD_DISABLE;
+	paddrparams.spp_flags = USR_SPP_PMTUD_DISABLE;
 	paddrparams.spp_pathmtu = 9000;
-	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(struct sctp_paddrparams)) < 0) {
+	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, USR_SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(struct usrsctp_paddrparams)) < 0) {
 		perror("usrsctp_setsockopt");
 		exit(EXIT_FAILURE);
 	}
@@ -595,7 +595,7 @@ main(int argc, char *argv[])
 
 	for (i = 0; i < NUMBER_OF_STEPS; i++) {
 		if (i % 2) {
-			sndinfo.snd_flags = SCTP_UNORDERED;
+			sndinfo.snd_flags = USR_SCTP_UNORDERED;
 		} else {
 			sndinfo.snd_flags = 0;
 		}
@@ -604,7 +604,7 @@ main(int argc, char *argv[])
 			sendv_retries_left = 120;
 			debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, j + 1, sndinfo.snd_flags);
 			while (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
-					 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+					 (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 				debug_printf("usrsctp_sendv - errno: %d - %s\n", errno, strerror(errno));
 				if (errno != EWOULDBLOCK || !sendv_retries_left) {
 					exit(EXIT_FAILURE);

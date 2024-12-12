@@ -81,17 +81,17 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 	ssize_t bytesSent;
 	char *buf;
 
-	if ((events & SCTP_EVENT_READ) && !done) {
-		struct sctp_recvv_rn rn;
+	if ((events & USR_SCTP_EVENT_READ) && !done) {
+		struct usrsctp_recvv_rn rn;
 		ssize_t n;
 		struct sockaddr_in addr;
 		buf = malloc(BUFFERSIZE);
 		int flags = 0;
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
 		unsigned int infotype = 0;
-		socklen_t infolen = sizeof(struct sctp_recvv_rn);
+		socklen_t infolen = sizeof(struct usrsctp_recvv_rn);
 
-		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 		                  &infolen, &infotype, &flags);
 
@@ -121,13 +121,13 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		free(buf);
 	}
 
-	if ((events & SCTP_EVENT_WRITE) && writePending && !done) {
+	if ((events & USR_SCTP_EVENT_WRITE) && writePending && !done) {
 		writePending = 0;
 		printf("\nHTTP request:\n%s\n", request);
 		printf("\nHTTP response:\n");
 
 		/* send GET request */
-		bytesSent = usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		bytesSent = usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, USR_SCTP_SENDV_NOINFO, 0);
 		if (bytesSent < 0) {
 			perror("usrsctp_sendv");
 			usrsctp_close(sock);
@@ -147,9 +147,9 @@ main(int argc, char *argv[])
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in bind4;
 	struct sockaddr_in6 bind6;
-	struct sctp_udpencaps encaps;
-	struct sctp_rtoinfo rtoinfo;
-	struct sctp_initmsg initmsg;
+	struct usrsctp_udpencaps encaps;
+	struct usrsctp_rtoinfo rtoinfo;
+	struct usrsctp_initmsg initmsg;
 	uint8_t address_family = 0;
 
 	if (argc < 3) {
@@ -211,7 +211,7 @@ main(int argc, char *argv[])
 	rtoinfo.srto_initial = 1000;
 	rtoinfo.srto_min = 1000;
 	rtoinfo.srto_max = 8000;
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RTOINFO, (const void *)&rtoinfo, (socklen_t)sizeof(struct sctp_rtoinfo)) < 0) {
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_RTOINFO, (const void *)&rtoinfo, (socklen_t)sizeof(struct usrsctp_rtoinfo)) < 0) {
 		perror("setsockopt");
 		usrsctp_close(sock);
 		result = RETVAL_CATCHALL;
@@ -221,7 +221,7 @@ main(int argc, char *argv[])
 	initmsg.sinit_max_instreams = 1;
 	initmsg.sinit_max_attempts = 5;
 	initmsg.sinit_max_init_timeo = 4000;
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, (const void *)&initmsg, (socklen_t)sizeof(struct sctp_initmsg)) < 0) {
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_INITMSG, (const void *)&initmsg, (socklen_t)sizeof(struct usrsctp_initmsg)) < 0) {
 		perror("setsockopt");
 		usrsctp_close(sock);
 		result = RETVAL_CATCHALL;
@@ -263,10 +263,10 @@ main(int argc, char *argv[])
 	}
 
 	if (argc > 5) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = address_family;
 		encaps.sue_port = htons(atoi(argv[5]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void *)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void *)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 			usrsctp_close(sock);
 			result = RETVAL_CATCHALL;

@@ -177,7 +177,7 @@ init_peer_connection(struct peer_connection *pc)
 		channel = &(pc->channels[i]);
 		channel->id = i;
 		channel->state = DATA_CHANNEL_CLOSED;
-		channel->pr_policy = SCTP_PR_SCTP_NONE;
+		channel->pr_policy = USR_SCTP_PR_SCTP_NONE;
 		channel->pr_value = 0;
 		channel->i_stream = 0;
 		channel->o_stream = 0;
@@ -254,12 +254,12 @@ find_free_channel(struct peer_connection *pc)
 static uint16_t
 find_free_o_stream(struct peer_connection *pc)
 {
-	struct sctp_status status;
+	struct usrsctp_status status;
 	uint32_t i, limit;
 	socklen_t len;
 
-	len = (socklen_t)sizeof(struct sctp_status);
-	if (usrsctp_getsockopt(pc->sock, IPPROTO_SCTP, SCTP_STATUS, &status, &len) < 0) {
+	len = (socklen_t)sizeof(struct usrsctp_status);
+	if (usrsctp_getsockopt(pc->sock, IPPROTO_SCTP, USR_SCTP_STATUS, &status, &len) < 0) {
 		perror("getsockopt");
 		return (0);
 	}
@@ -284,8 +284,8 @@ find_free_o_stream(struct peer_connection *pc)
 static void
 request_more_o_streams(struct peer_connection *pc)
 {
-	struct sctp_status status;
-	struct sctp_add_streams sas;
+	struct usrsctp_status status;
+	struct usrsctp_add_streams sas;
 	uint32_t i, o_streams_needed;
 	socklen_t len;
 
@@ -296,8 +296,8 @@ request_more_o_streams(struct peer_connection *pc)
 			o_streams_needed++;
 		}
 	}
-	len = (socklen_t)sizeof(struct sctp_status);
-	if (usrsctp_getsockopt(pc->sock, IPPROTO_SCTP, SCTP_STATUS, &status, &len) < 0) {
+	len = (socklen_t)sizeof(struct usrsctp_status);
+	if (usrsctp_getsockopt(pc->sock, IPPROTO_SCTP, USR_SCTP_STATUS, &status, &len) < 0) {
 		perror("getsockopt");
 		return;
 	}
@@ -307,10 +307,10 @@ request_more_o_streams(struct peer_connection *pc)
 	if (o_streams_needed == 0) {
 		return;
 	}
-	memset(&sas, 0, sizeof(struct sctp_add_streams));
+	memset(&sas, 0, sizeof(struct usrsctp_add_streams));
 	sas.sas_instrms = 0;
 	sas.sas_outstrms = (uint16_t)o_streams_needed; /* XXX error handling */
-	if (usrsctp_setsockopt(pc->sock, IPPROTO_SCTP, SCTP_ADD_STREAMS, &sas, (socklen_t)sizeof(struct sctp_add_streams)) < 0) {
+	if (usrsctp_setsockopt(pc->sock, IPPROTO_SCTP, USR_SCTP_ADD_STREAMS, &sas, (socklen_t)sizeof(struct usrsctp_add_streams)) < 0) {
 		perror("setsockopt");
 	}
 	return;
@@ -321,20 +321,20 @@ send_open_request_message(struct socket *sock, uint16_t o_stream, uint8_t unorde
 {
 	/* XXX: This should be encoded in a better way */
 	struct rtcweb_datachannel_open_request req;
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 
 	memset(&req, 0, sizeof(struct rtcweb_datachannel_open_request));
 	req.msg_type = DATA_CHANNEL_OPEN_REQUEST;
 	switch (pr_policy) {
-	case SCTP_PR_SCTP_NONE:
+	case USR_SCTP_PR_SCTP_NONE:
 		/* XXX: What about DATA_CHANNEL_RELIABLE_STREAM */
 		req.channel_type = DATA_CHANNEL_RELIABLE;
 		break;
-	case SCTP_PR_SCTP_TTL:
+	case USR_SCTP_PR_SCTP_TTL:
 		/* XXX: What about DATA_CHANNEL_UNRELIABLE */
 		req.channel_type = DATA_CHANNEL_PARTIAL_RELIABLE_TIMED;
 		break;
-	case SCTP_PR_SCTP_RTX:
+	case USR_SCTP_PR_SCTP_RTX:
 		req.channel_type = DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT;
 		break;
 	default:
@@ -346,15 +346,15 @@ send_open_request_message(struct socket *sock, uint16_t o_stream, uint8_t unorde
 	}
 	req.reliability_params = htons((uint16_t)pr_value); /* XXX Why 16-bit */
 	req.priority = htons(0); /* XXX: add support */
-	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
+	memset(&sndinfo, 0, sizeof(struct usrsctp_sndinfo));
 	sndinfo.snd_sid = o_stream;
-	sndinfo.snd_flags = SCTP_EOR;
+	sndinfo.snd_flags = USR_SCTP_EOR;
 	sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_CONTROL);
 	if (usrsctp_sendv(sock,
 	                  &req, sizeof(struct rtcweb_datachannel_open_request),
 	                  NULL, 0,
-	                  &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
-	                  SCTP_SENDV_SNDINFO, 0) < 0) {
+	                  &sndinfo, (socklen_t)sizeof(struct usrsctp_sndinfo),
+	                  USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("sctp_sendv");
 		return (0);
 	} else {
@@ -367,22 +367,22 @@ send_open_response_message(struct socket *sock, uint16_t o_stream, uint16_t i_st
 {
 	/* XXX: This should be encoded in a better way */
 	struct rtcweb_datachannel_open_response rsp;
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 
 	memset(&rsp, 0, sizeof(struct rtcweb_datachannel_open_response));
 	rsp.msg_type = DATA_CHANNEL_OPEN_RESPONSE;
 	rsp.error = 0;
 	rsp.flags = htons(0);
 	rsp.reverse_stream = htons(i_stream);
-	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
+	memset(&sndinfo, 0, sizeof(struct usrsctp_sndinfo));
 	sndinfo.snd_sid = o_stream;
-	sndinfo.snd_flags = SCTP_EOR;
+	sndinfo.snd_flags = USR_SCTP_EOR;
 	sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_CONTROL);
 	if (usrsctp_sendv(sock,
 	                  &rsp, sizeof(struct rtcweb_datachannel_open_response),
 	                  NULL, 0,
-	                  &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
-	                  SCTP_SENDV_SNDINFO, 0) < 0) {
+	                  &sndinfo, (socklen_t)sizeof(struct usrsctp_sndinfo),
+	                  USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("sctp_sendv");
 		return (0);
 	} else {
@@ -395,19 +395,19 @@ send_open_ack_message(struct socket *sock, uint16_t o_stream)
 {
 	/* XXX: This should be encoded in a better way */
 	struct rtcweb_datachannel_ack ack;
-	struct sctp_sndinfo sndinfo;
+	struct usrsctp_sndinfo sndinfo;
 
 	memset(&ack, 0, sizeof(struct rtcweb_datachannel_ack));
 	ack.msg_type = DATA_CHANNEL_ACK;
-	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
+	memset(&sndinfo, 0, sizeof(struct usrsctp_sndinfo));
 	sndinfo.snd_sid = o_stream;
-	sndinfo.snd_flags = SCTP_EOR;
+	sndinfo.snd_flags = USR_SCTP_EOR;
 	sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_CONTROL);
 	if (usrsctp_sendv(sock,
 	                  &ack, sizeof(struct rtcweb_datachannel_ack),
 	                  NULL, 0,
-	                  &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
-	                  SCTP_SENDV_SNDINFO, 0) < 0) {
+	                  &sndinfo, (socklen_t)sizeof(struct usrsctp_sndinfo),
+	                  USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("sctp_sendv");
 		return (0);
 	} else {
@@ -460,15 +460,15 @@ open_channel(struct peer_connection *pc, uint8_t unordered, uint16_t pr_policy, 
 	struct channel *channel;
 	uint16_t o_stream;
 
-	if ((pr_policy != SCTP_PR_SCTP_NONE) &&
-	    (pr_policy != SCTP_PR_SCTP_TTL) &&
-	    (pr_policy != SCTP_PR_SCTP_RTX)) {
+	if ((pr_policy != USR_SCTP_PR_SCTP_NONE) &&
+	    (pr_policy != USR_SCTP_PR_SCTP_TTL) &&
+	    (pr_policy != USR_SCTP_PR_SCTP_RTX)) {
 		return (NULL);
 	}
 	if ((unordered != 0) && (unordered != 1)) {
 		return (NULL);
 	}
-	if ((pr_policy == SCTP_PR_SCTP_NONE) && (pr_value != 0)) {
+	if ((pr_policy == USR_SCTP_PR_SCTP_NONE) && (pr_value != 0)) {
 		return (NULL);
 	}
 	if ((channel = find_free_channel(pc)) == NULL) {
@@ -507,7 +507,7 @@ open_channel(struct peer_connection *pc, uint8_t unordered, uint16_t pr_policy, 
 static int
 send_user_message(struct peer_connection *pc, struct channel *channel, char *message, size_t length)
 {
-	struct sctp_sendv_spa spa;
+	struct usrsctp_sendv_spa spa;
 
 	if (channel == NULL) {
 		return (0);
@@ -518,27 +518,27 @@ send_user_message(struct peer_connection *pc, struct channel *channel, char *mes
 		return (0);
 	}
 
-	memset(&spa, 0, sizeof(struct sctp_sendv_spa));
+	memset(&spa, 0, sizeof(struct usrsctp_sendv_spa));
 	spa.sendv_sndinfo.snd_sid = channel->o_stream;
 	if ((channel->state == DATA_CHANNEL_OPEN) &&
 	    (channel->unordered)) {
-		spa.sendv_sndinfo.snd_flags = SCTP_EOR | SCTP_UNORDERED;
+		spa.sendv_sndinfo.snd_flags = USR_SCTP_EOR | USR_SCTP_UNORDERED;
 	} else {
-		spa.sendv_sndinfo.snd_flags = SCTP_EOR;
+		spa.sendv_sndinfo.snd_flags = USR_SCTP_EOR;
 	}
 	spa.sendv_sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_DOMSTRING);
-	spa.sendv_flags = SCTP_SEND_SNDINFO_VALID;
-	if ((channel->pr_policy == SCTP_PR_SCTP_TTL) ||
-	    (channel->pr_policy == SCTP_PR_SCTP_RTX)) {
+	spa.sendv_flags = USR_SCTP_SEND_SNDINFO_VALID;
+	if ((channel->pr_policy == USR_SCTP_PR_SCTP_TTL) ||
+	    (channel->pr_policy == USR_SCTP_PR_SCTP_RTX)) {
 		spa.sendv_prinfo.pr_policy = channel->pr_policy;
 		spa.sendv_prinfo.pr_value = channel->pr_value;
-		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
+		spa.sendv_flags |= USR_SCTP_SEND_PRINFO_VALID;
 	}
 	if (usrsctp_sendv(pc->sock,
 	                  message, length,
 	                  NULL, 0,
-	                  &spa, (socklen_t)sizeof(struct sctp_sendv_spa),
-	                  SCTP_SENDV_SPA, 0) < 0) {
+	                  &spa, (socklen_t)sizeof(struct usrsctp_sendv_spa),
+	                  USR_SCTP_SENDV_SPA, 0) < 0) {
 		perror("sctp_sendv");
 		return (0);
 	} else {
@@ -563,25 +563,25 @@ reset_outgoing_stream(struct peer_connection *pc, uint16_t o_stream)
 static void
 send_outgoing_stream_reset(struct peer_connection *pc)
 {
-	struct sctp_reset_streams *srs;
+	struct usrsctp_reset_streams *srs;
 	uint32_t i;
 	size_t len;
 
 	if (pc->o_stream_buffer_counter == 0) {
 		return;
 	}
-	len = sizeof(sctp_assoc_t) + (2 + pc->o_stream_buffer_counter) * sizeof(uint16_t);
-	srs = (struct sctp_reset_streams *)malloc(len);
+	len = sizeof(usrsctp_assoc_t) + (2 + pc->o_stream_buffer_counter) * sizeof(uint16_t);
+	srs = (struct usrsctp_reset_streams *)malloc(len);
 	if (srs == NULL) {
 		return;
 	}
 	memset(srs, 0, len);
-	srs->srs_flags = SCTP_STREAM_RESET_OUTGOING;
+	srs->srs_flags = USR_SCTP_STREAM_RESET_OUTGOING;
 	srs->srs_number_streams = pc->o_stream_buffer_counter;
 	for (i = 0; i < pc->o_stream_buffer_counter; i++) {
 		srs->srs_stream_list[i] = pc->o_stream_buffer[i];
 	}
-	if (usrsctp_setsockopt(pc->sock, IPPROTO_SCTP, SCTP_RESET_STREAMS, srs, (socklen_t)len) < 0) {
+	if (usrsctp_setsockopt(pc->sock, IPPROTO_SCTP, USR_SCTP_RESET_STREAMS, srs, (socklen_t)len) < 0) {
 		perror("setsockopt");
 	} else {
 		for (i = 0; i < pc->o_stream_buffer_counter; i++) {
@@ -632,24 +632,24 @@ handle_open_request_message(struct peer_connection *pc,
 	}
 	switch (req->channel_type) {
 	case DATA_CHANNEL_RELIABLE:
-		pr_policy = SCTP_PR_SCTP_NONE;
+		pr_policy = USR_SCTP_PR_SCTP_NONE;
 		break;
 	/* XXX Doesn't make sense */
 	case DATA_CHANNEL_RELIABLE_STREAM:
-		pr_policy = SCTP_PR_SCTP_NONE;
+		pr_policy = USR_SCTP_PR_SCTP_NONE;
 		break;
 	/* XXX Doesn't make sense */
 	case DATA_CHANNEL_UNRELIABLE:
-		pr_policy = SCTP_PR_SCTP_TTL;
+		pr_policy = USR_SCTP_PR_SCTP_TTL;
 		break;
 	case DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT:
-		pr_policy = SCTP_PR_SCTP_RTX;
+		pr_policy = USR_SCTP_PR_SCTP_RTX;
 		break;
 	case DATA_CHANNEL_PARTIAL_RELIABLE_TIMED:
-		pr_policy = SCTP_PR_SCTP_TTL;
+		pr_policy = USR_SCTP_PR_SCTP_TTL;
 		break;
 	default:
-		pr_policy = SCTP_PR_SCTP_NONE;
+		pr_policy = USR_SCTP_PR_SCTP_NONE;
 		/* XXX error handling */
 		break;
 	}
@@ -841,26 +841,26 @@ handle_message(struct peer_connection *pc, char *buffer, size_t length, uint32_t
 }
 
 static void
-handle_association_change_event(struct sctp_assoc_change *sac)
+handle_association_change_event(struct usrsctp_assoc_change *sac)
 {
 	unsigned int i, n;
 
 	printf("Association change ");
 	switch (sac->sac_state) {
-	case SCTP_COMM_UP:
-		printf("SCTP_COMM_UP");
+	case USR_SCTP_COMM_UP:
+		printf("USR_SCTP_COMM_UP");
 		break;
-	case SCTP_COMM_LOST:
-		printf("SCTP_COMM_LOST");
+	case USR_SCTP_COMM_LOST:
+		printf("USR_SCTP_COMM_LOST");
 		break;
-	case SCTP_RESTART:
-		printf("SCTP_RESTART");
+	case USR_SCTP_RESTART:
+		printf("USR_SCTP_RESTART");
 		break;
-	case SCTP_SHUTDOWN_COMP:
-		printf("SCTP_SHUTDOWN_COMP");
+	case USR_SCTP_SHUTDOWN_COMP:
+		printf("USR_SCTP_SHUTDOWN_COMP");
 		break;
-	case SCTP_CANT_STR_ASSOC:
-		printf("SCTP_CANT_STR_ASSOC");
+	case USR_SCTP_CANT_STR_ASSOC:
+		printf("USR_SCTP_CANT_STR_ASSOC");
 		break;
 	default:
 		printf("UNKNOWN");
@@ -868,28 +868,28 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 	}
 	printf(", streams (in/out) = (%u/%u)",
 	       sac->sac_inbound_streams, sac->sac_outbound_streams);
-	n = sac->sac_length - sizeof(struct sctp_assoc_change);
-	if (((sac->sac_state == SCTP_COMM_UP) ||
-	     (sac->sac_state == SCTP_RESTART)) && (n > 0)) {
+	n = sac->sac_length - sizeof(struct usrsctp_assoc_change);
+	if (((sac->sac_state == USR_SCTP_COMM_UP) ||
+	     (sac->sac_state == USR_SCTP_RESTART)) && (n > 0)) {
 		printf(", supports");
 		for (i = 0; i < n; i++) {
 			switch (sac->sac_info[i]) {
-			case SCTP_ASSOC_SUPPORTS_PR:
+			case USR_SCTP_ASSOC_SUPPORTS_PR:
 				printf(" PR");
 				break;
-			case SCTP_ASSOC_SUPPORTS_AUTH:
+			case USR_SCTP_ASSOC_SUPPORTS_AUTH:
 				printf(" AUTH");
 				break;
-			case SCTP_ASSOC_SUPPORTS_ASCONF:
+			case USR_SCTP_ASSOC_SUPPORTS_ASCONF:
 				printf(" ASCONF");
 				break;
-			case SCTP_ASSOC_SUPPORTS_MULTIBUF:
+			case USR_SCTP_ASSOC_SUPPORTS_MULTIBUF:
 				printf(" MULTIBUF");
 				break;
-			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
+			case USR_SCTP_ASSOC_SUPPORTS_RE_CONFIG:
 				printf(" RE-CONFIG");
 				break;
-			case SCTP_ASSOC_SUPPORTS_INTERLEAVING:
+			case USR_SCTP_ASSOC_SUPPORTS_INTERLEAVING:
 				printf(" INTERLEAVING");
 				break;
 			default:
@@ -897,24 +897,24 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 				break;
 			}
 		}
-	} else if (((sac->sac_state == SCTP_COMM_LOST) ||
-	            (sac->sac_state == SCTP_CANT_STR_ASSOC)) && (n > 0)) {
+	} else if (((sac->sac_state == USR_SCTP_COMM_LOST) ||
+	            (sac->sac_state == USR_SCTP_CANT_STR_ASSOC)) && (n > 0)) {
 		printf(", ABORT =");
 		for (i = 0; i < n; i++) {
 			printf(" 0x%02x", sac->sac_info[i]);
 		}
 	}
 	printf(".\n");
-	if ((sac->sac_state == SCTP_CANT_STR_ASSOC) ||
-	    (sac->sac_state == SCTP_SHUTDOWN_COMP) ||
-	    (sac->sac_state == SCTP_COMM_LOST)) {
+	if ((sac->sac_state == USR_SCTP_CANT_STR_ASSOC) ||
+	    (sac->sac_state == USR_SCTP_SHUTDOWN_COMP) ||
+	    (sac->sac_state == USR_SCTP_COMM_LOST)) {
 		exit(0);
 	}
 	return;
 }
 
 static void
-handle_peer_address_change_event(struct sctp_paddr_change *spc)
+handle_peer_address_change_event(struct usrsctp_paddr_change *spc)
 {
 	char addr_buf[INET6_ADDRSTRLEN];
 	const char *addr;
@@ -943,23 +943,23 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 	}
 	printf("Peer address %s is now ", addr);
 	switch (spc->spc_state) {
-	case SCTP_ADDR_AVAILABLE:
-		printf("SCTP_ADDR_AVAILABLE");
+	case USR_SCTP_ADDR_AVAILABLE:
+		printf("USR_SCTP_ADDR_AVAILABLE");
 		break;
-	case SCTP_ADDR_UNREACHABLE:
-		printf("SCTP_ADDR_UNREACHABLE");
+	case USR_SCTP_ADDR_UNREACHABLE:
+		printf("USR_SCTP_ADDR_UNREACHABLE");
 		break;
-	case SCTP_ADDR_REMOVED:
-		printf("SCTP_ADDR_REMOVED");
+	case USR_SCTP_ADDR_REMOVED:
+		printf("USR_SCTP_ADDR_REMOVED");
 		break;
-	case SCTP_ADDR_ADDED:
-		printf("SCTP_ADDR_ADDED");
+	case USR_SCTP_ADDR_ADDED:
+		printf("USR_SCTP_ADDR_ADDED");
 		break;
-	case SCTP_ADDR_MADE_PRIM:
-		printf("SCTP_ADDR_MADE_PRIM");
+	case USR_SCTP_ADDR_MADE_PRIM:
+		printf("USR_SCTP_ADDR_MADE_PRIM");
 		break;
-	case SCTP_ADDR_CONFIRMED:
-		printf("SCTP_ADDR_CONFIRMED");
+	case USR_SCTP_ADDR_CONFIRMED:
+		printf("USR_SCTP_ADDR_CONFIRMED");
 		break;
 	default:
 		printf("UNKNOWN");
@@ -970,14 +970,14 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 }
 
 static void
-handle_adaptation_indication(struct sctp_adaptation_event *sai)
+handle_adaptation_indication(struct usrsctp_adaptation_event *sai)
 {
 	printf("Adaptation indication: %x.\n", sai-> sai_adaptation_ind);
 	return;
 }
 
 static void
-handle_shutdown_event(struct sctp_shutdown_event *sse)
+handle_shutdown_event(struct usrsctp_shutdown_event *sse)
 {
 	printf("Shutdown event.\n");
 	/* XXX: notify all channels. */
@@ -985,20 +985,20 @@ handle_shutdown_event(struct sctp_shutdown_event *sse)
 }
 
 static void
-handle_stream_reset_event(struct peer_connection *pc, struct sctp_stream_reset_event *strrst)
+handle_stream_reset_event(struct peer_connection *pc, struct usrsctp_stream_reset_event *strrst)
 {
 	uint32_t n, i;
 	struct channel *channel;
 
-	n = (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) / sizeof(uint16_t);
+	n = (strrst->strreset_length - sizeof(struct usrsctp_stream_reset_event)) / sizeof(uint16_t);
 	printf("Stream reset event: flags = %x, ", strrst->strreset_flags);
-	if (strrst->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
-		if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+	if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_INCOMING_SSN) {
+		if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_OUTGOING_SSN) {
 			printf("incoming/");
 		}
 		printf("incoming ");
 	}
-	if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+	if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_OUTGOING_SSN) {
 		printf("outgoing ");
 	}
 	printf("stream ids = ");
@@ -1009,16 +1009,16 @@ handle_stream_reset_event(struct peer_connection *pc, struct sctp_stream_reset_e
 		printf("%d", strrst->strreset_stream_list[i]);
 	}
 	printf(".\n");
-	if (!(strrst->strreset_flags & SCTP_STREAM_RESET_DENIED) &&
-	    !(strrst->strreset_flags & SCTP_STREAM_RESET_FAILED)) {
+	if (!(strrst->strreset_flags & USR_SCTP_STREAM_RESET_DENIED) &&
+	    !(strrst->strreset_flags & USR_SCTP_STREAM_RESET_FAILED)) {
 		for (i = 0; i < n; i++) {
-			if (strrst->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
+			if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_INCOMING_SSN) {
 				channel = find_channel_by_i_stream(pc, strrst->strreset_stream_list[i]);
 				if (channel != NULL) {
 					pc->i_stream_channel[channel->i_stream] = NULL;
 					channel->i_stream = 0;
 					if (channel->o_stream == 0) {
-						channel->pr_policy = SCTP_PR_SCTP_NONE;
+						channel->pr_policy = USR_SCTP_PR_SCTP_NONE;
 						channel->pr_value = 0;
 						channel->unordered = 0;
 						channel->flags = 0;
@@ -1033,13 +1033,13 @@ handle_stream_reset_event(struct peer_connection *pc, struct sctp_stream_reset_e
 					}
 				}
 			}
-			if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+			if (strrst->strreset_flags & USR_SCTP_STREAM_RESET_OUTGOING_SSN) {
 				channel = find_channel_by_o_stream(pc, strrst->strreset_stream_list[i]);
 				if (channel != NULL) {
 					pc->o_stream_channel[channel->o_stream] = NULL;
 					channel->o_stream = 0;
 					if (channel->i_stream == 0) {
-						channel->pr_policy = SCTP_PR_SCTP_NONE;
+						channel->pr_policy = USR_SCTP_PR_SCTP_NONE;
 						channel->pr_value = 0;
 						channel->unordered = 0;
 						channel->flags = 0;
@@ -1053,7 +1053,7 @@ handle_stream_reset_event(struct peer_connection *pc, struct sctp_stream_reset_e
 }
 
 static void
-handle_stream_change_event(struct peer_connection *pc, struct sctp_stream_change_event *strchg)
+handle_stream_change_event(struct peer_connection *pc, struct usrsctp_stream_change_event *strchg)
 {
 	uint16_t o_stream;
 	uint32_t i;
@@ -1065,14 +1065,14 @@ handle_stream_change_event(struct peer_connection *pc, struct sctp_stream_change
 		channel = &(pc->channels[i]);
 		if ((channel->state == DATA_CHANNEL_CONNECTING) &&
 		    (channel->o_stream == 0)) {
-			if ((strchg->strchange_flags & SCTP_STREAM_CHANGE_DENIED) ||
-			    (strchg->strchange_flags & SCTP_STREAM_CHANGE_FAILED)) {
+			if ((strchg->strchange_flags & USR_SCTP_STREAM_CHANGE_DENIED) ||
+			    (strchg->strchange_flags & USR_SCTP_STREAM_CHANGE_FAILED)) {
 				/* XXX: Signal to the other end. */
 				if (channel->i_stream != 0) {
 					pc->i_stream_channel[channel->i_stream] = NULL;
 				}
 				channel->unordered = 0;
-				channel->pr_policy = SCTP_PR_SCTP_NONE;
+				channel->pr_policy = USR_SCTP_PR_SCTP_NONE;
 				channel->pr_value = 0;
 				channel->i_stream = 0;
 				channel->o_stream = 0;
@@ -1099,11 +1099,11 @@ handle_stream_change_event(struct peer_connection *pc, struct sctp_stream_change
 }
 
 static void
-handle_remote_error_event(struct sctp_remote_error *sre)
+handle_remote_error_event(struct usrsctp_remote_error *sre)
 {
 	size_t i, n;
 
-	n = sre->sre_length - sizeof(struct sctp_remote_error);
+	n = sre->sre_length - sizeof(struct usrsctp_remote_error);
 	printf("Remote Error (error = 0x%04x): ", sre->sre_error);
 	for (i = 0; i < n; i++) {
 		printf(" 0x%02x", sre-> sre_data[i]);
@@ -1113,23 +1113,23 @@ handle_remote_error_event(struct sctp_remote_error *sre)
 }
 
 static void
-handle_send_failed_event(struct sctp_send_failed_event *ssfe)
+handle_send_failed_event(struct usrsctp_send_failed_event *ssfe)
 {
 	size_t i, n;
 
-	if (ssfe->ssfe_flags & SCTP_DATA_UNSENT) {
+	if (ssfe->ssfe_flags & USR_SCTP_DATA_UNSENT) {
 		printf("Unsent ");
 	}
-	if (ssfe->ssfe_flags & SCTP_DATA_SENT) {
+	if (ssfe->ssfe_flags & USR_SCTP_DATA_SENT) {
 		printf("Sent ");
 	}
-	if (ssfe->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
+	if (ssfe->ssfe_flags & ~(USR_SCTP_DATA_SENT | USR_SCTP_DATA_UNSENT)) {
 		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
 	printf("message with PPID = %u, SID = %u, flags: 0x%04x due to error = 0x%08x",
 	       (uint32_t)ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
-	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
+	n = ssfe->ssfe_length - sizeof(struct usrsctp_send_failed_event);
 	for (i = 0; i < n; i++) {
 		printf(" 0x%02x", ssfe->ssfe_data[i]);
 	}
@@ -1138,47 +1138,47 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 }
 
 static void
-handle_notification_rtcweb(struct peer_connection *pc, union sctp_notification *notif, size_t n)
+handle_notification_rtcweb(struct peer_connection *pc, union usrsctp_notification *notif, size_t n)
 {
 	if (notif->sn_header.sn_length != (uint32_t)n) {
 		return;
 	}
 	switch (notif->sn_header.sn_type) {
-	case SCTP_ASSOC_CHANGE:
+	case USR_SCTP_ASSOC_CHANGE:
 		handle_association_change_event(&(notif->sn_assoc_change));
 		break;
-	case SCTP_PEER_ADDR_CHANGE:
+	case USR_SCTP_PEER_ADDR_CHANGE:
 		handle_peer_address_change_event(&(notif->sn_paddr_change));
 		break;
-	case SCTP_REMOTE_ERROR:
+	case USR_SCTP_REMOTE_ERROR:
 		handle_remote_error_event(&(notif->sn_remote_error));
 		break;
-	case SCTP_SHUTDOWN_EVENT:
+	case USR_SCTP_SHUTDOWN_EVENT:
 		handle_shutdown_event(&(notif->sn_shutdown_event));
 		break;
-	case SCTP_ADAPTATION_INDICATION:
+	case USR_SCTP_ADAPTATION_INDICATION:
 		handle_adaptation_indication(&(notif->sn_adaptation_event));
 		break;
-	case SCTP_PARTIAL_DELIVERY_EVENT:
+	case USR_SCTP_PARTIAL_DELIVERY_EVENT:
 		break;
-	case SCTP_AUTHENTICATION_EVENT:
+	case USR_SCTP_AUTHENTICATION_EVENT:
 		break;
-	case SCTP_SENDER_DRY_EVENT:
+	case USR_SCTP_SENDER_DRY_EVENT:
 		break;
-	case SCTP_NOTIFICATIONS_STOPPED_EVENT:
+	case USR_SCTP_NOTIFICATIONS_STOPPED_EVENT:
 		break;
-	case SCTP_SEND_FAILED_EVENT:
+	case USR_SCTP_SEND_FAILED_EVENT:
 		handle_send_failed_event(&(notif->sn_send_failed_event));
 		break;
-	case SCTP_STREAM_RESET_EVENT:
+	case USR_SCTP_STREAM_RESET_EVENT:
 		handle_stream_reset_event(pc, &(notif->sn_strreset_event));
 		send_deferred_messages(pc);
 		send_outgoing_stream_reset(pc);
 		request_more_o_streams(pc);
 		break;
-	case SCTP_ASSOC_RESET_EVENT:
+	case USR_SCTP_ASSOC_RESET_EVENT:
 		break;
-	case SCTP_STREAM_CHANGE_EVENT:
+	case USR_SCTP_STREAM_CHANGE_EVENT:
 		handle_stream_change_event(pc, &(notif->sn_strchange_event));
 		send_deferred_messages(pc);
 		send_outgoing_stream_reset(pc);
@@ -1192,46 +1192,46 @@ handle_notification_rtcweb(struct peer_connection *pc, union sctp_notification *
 static void
 print_status(struct peer_connection *pc)
 {
-	struct sctp_status status;
+	struct usrsctp_status status;
 	socklen_t len;
 	uint32_t i;
 	struct channel *channel;
 
-	len = (socklen_t)sizeof(struct sctp_status);
-	if (usrsctp_getsockopt(pc->sock, IPPROTO_SCTP, SCTP_STATUS, &status, &len) < 0) {
+	len = (socklen_t)sizeof(struct usrsctp_status);
+	if (usrsctp_getsockopt(pc->sock, IPPROTO_SCTP, USR_SCTP_STATUS, &status, &len) < 0) {
 		perror("getsockopt");
 		return;
 	}
 	printf("Association state: ");
 	switch (status.sstat_state) {
-	case SCTP_CLOSED:
+	case USR_SCTP_CLOSED:
 		printf("CLOSED\n");
 		break;
-	case SCTP_BOUND:
+	case USR_SCTP_BOUND:
 		printf("BOUND\n");
 		break;
-	case SCTP_LISTEN:
+	case USR_SCTP_LISTEN:
 		printf("LISTEN\n");
 		break;
-	case SCTP_COOKIE_WAIT:
+	case USR_SCTP_COOKIE_WAIT:
 		printf("COOKIE_WAIT\n");
 		break;
-	case SCTP_COOKIE_ECHOED:
+	case USR_SCTP_COOKIE_ECHOED:
 		printf("COOKIE_ECHOED\n");
 		break;
-	case SCTP_ESTABLISHED:
+	case USR_SCTP_ESTABLISHED:
 		printf("ESTABLISHED\n");
 		break;
-	case SCTP_SHUTDOWN_PENDING:
+	case USR_SCTP_SHUTDOWN_PENDING:
 		printf("SHUTDOWN_PENDING\n");
 		break;
-	case SCTP_SHUTDOWN_SENT:
+	case USR_SCTP_SHUTDOWN_SENT:
 		printf("SHUTDOWN_SENT\n");
 		break;
-	case SCTP_SHUTDOWN_RECEIVED:
+	case USR_SCTP_SHUTDOWN_RECEIVED:
 		printf("SHUTDOWN_RECEIVED\n");
 		break;
-	case SCTP_SHUTDOWN_ACK_SENT:
+	case USR_SCTP_SHUTDOWN_ACK_SENT:
 		printf("SHUTDOWN_ACK_SENT\n");
 		break;
 	default:
@@ -1273,13 +1273,13 @@ print_status(struct peer_connection *pc)
 			printf("ordered, ");
 		}
 		switch (channel->pr_policy) {
-		case SCTP_PR_SCTP_NONE:
+		case USR_SCTP_PR_SCTP_NONE:
 			printf("reliable.\n");
 			break;
-		case SCTP_PR_SCTP_TTL:
+		case USR_SCTP_PR_SCTP_TTL:
 			printf("unreliable (timeout %ums).\n", channel->pr_value);
 			break;
-		case SCTP_PR_SCTP_RTX:
+		case USR_SCTP_PR_SCTP_RTX:
 			printf("unreliable (max. %u rtx).\n", channel->pr_value);
 			break;
 		default:
@@ -1291,7 +1291,7 @@ print_status(struct peer_connection *pc)
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+           size_t datalen, struct usrsctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	struct peer_connection *pc;
 
@@ -1299,8 +1299,8 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 
 	if (data) {
 		lock_peer_connection(pc);
-		if (flags & MSG_NOTIFICATION) {
-			handle_notification_rtcweb(pc, (union sctp_notification *)data, datalen);
+		if (flags & USR_MSG_NOTIFICATION) {
+			handle_notification_rtcweb(pc, (union usrsctp_notification *)data, datalen);
 		} else {
 			handle_message(pc, data, datalen, ntohl(rcv.rcv_ppid), rcv.rcv_sid);
 		}
@@ -1320,18 +1320,18 @@ main(int argc, char *argv[])
 	unsigned int i;
 	struct channel *channel;
 	const int on = 1;
-	struct sctp_assoc_value av;
-	struct sctp_event event;
-	struct sctp_udpencaps encaps;
-	struct sctp_initmsg initmsg;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
-	                          SCTP_PEER_ADDR_CHANGE,
-	                          SCTP_REMOTE_ERROR,
-	                          SCTP_SHUTDOWN_EVENT,
-	                          SCTP_ADAPTATION_INDICATION,
-	                          SCTP_SEND_FAILED_EVENT,
-	                          SCTP_STREAM_RESET_EVENT,
-	                          SCTP_STREAM_CHANGE_EVENT};
+	struct usrsctp_assoc_value av;
+	struct usrsctp_event event;
+	struct usrsctp_udpencaps encaps;
+	struct usrsctp_initmsg initmsg;
+	uint16_t event_types[] = {USR_SCTP_ASSOC_CHANGE,
+	                          USR_SCTP_PEER_ADDR_CHANGE,
+	                          USR_SCTP_REMOTE_ERROR,
+	                          USR_SCTP_SHUTDOWN_EVENT,
+	                          USR_SCTP_ADAPTATION_INDICATION,
+	                          USR_SCTP_SEND_FAILED_EVENT,
+	                          USR_SCTP_STREAM_RESET_EVENT,
+	                          USR_SCTP_STREAM_CHANGE_EVENT};
 	char addrbuf[INET_ADDRSTRLEN];
 
 	if (argc > 1) {
@@ -1350,40 +1350,40 @@ main(int argc, char *argv[])
 	}
 	init_peer_connection(&peer_connection);
 	if (argc > 2) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[2]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 	}
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
-		perror("setsockopt SCTP_RECVRCVINFO");
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
+		perror("setsockopt USR_SCTP_RECVRCVINFO");
 	}
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &on, sizeof(int)) < 0) {
-		perror("setsockopt SCTP_EXPLICIT_EOR");
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_EXPLICIT_EOR, &on, sizeof(int)) < 0) {
+		perror("setsockopt USR_SCTP_EXPLICIT_EOR");
 	}
 	/* Allow resetting streams. */
-	av.assoc_id = SCTP_ALL_ASSOC;
-	av.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &av, sizeof(struct sctp_assoc_value)) < 0) {
+	av.assoc_id = USR_SCTP_ALL_ASSOC;
+	av.assoc_value = USR_SCTP_ENABLE_RESET_STREAM_REQ | USR_SCTP_ENABLE_CHANGE_ASSOC_REQ;
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &av, sizeof(struct usrsctp_assoc_value)) < 0) {
 		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
 	}
 	/* Enable the events of interest. */
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_assoc_id = USR_SCTP_ALL_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT");
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt USR_SCTP_EVENT");
 		}
 	}
-	memset(&initmsg, 0, sizeof(struct sctp_initmsg));
+	memset(&initmsg, 0, sizeof(struct usrsctp_initmsg));
 	initmsg.sinit_num_ostreams = 5;
 	initmsg.sinit_max_instreams = 65535;
-	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(struct sctp_initmsg)) < 0) {
-		perror("setsockopt SCTP_INITMSG");
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, USR_SCTP_INITMSG, &initmsg, sizeof(struct usrsctp_initmsg)) < 0) {
+		perror("setsockopt USR_SCTP_INITMSG");
 	}
 
 	if (argc == 5) {

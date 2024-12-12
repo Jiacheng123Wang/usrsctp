@@ -753,7 +753,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			cnt_mk++;
 		}
 		if ((chk->whoTo == net) &&
-		    (chk->rec.chunk_id.id == SCTP_ECN_ECHO)) {
+		    (chk->rec.chunk_id.id == USR_SCTP_ECN_ECHO)) {
 			sctp_free_remote_addr(chk->whoTo);
 			chk->whoTo = alt;
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
@@ -1068,7 +1068,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 
 	/* first before all else we must find the cookie */
 	TAILQ_FOREACH(cookie, &stcb->asoc.control_send_queue, sctp_next) {
-		if (cookie->rec.chunk_id.id == SCTP_COOKIE_ECHO) {
+		if (cookie->rec.chunk_id.id == USR_SCTP_COOKIE_ECHO) {
 			break;
 		}
 	}
@@ -1155,7 +1155,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 	/* See if a ECN Echo is also stranded */
 	TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
 		if ((chk->whoTo == net) &&
-		    (chk->rec.chunk_id.id == SCTP_ECN_ECHO)) {
+		    (chk->rec.chunk_id.id == USR_SCTP_ECN_ECHO)) {
 			sctp_free_remote_addr(chk->whoTo);
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
@@ -1239,7 +1239,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		/* See if an ECN Echo is also stranded */
 		TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
 			if ((chk->whoTo == net) &&
-			    (chk->rec.chunk_id.id == SCTP_ECN_ECHO)) {
+			    (chk->rec.chunk_id.id == USR_SCTP_ECN_ECHO)) {
 				sctp_free_remote_addr(chk->whoTo);
 				chk->whoTo = alt;
 				if (chk->sent != SCTP_DATAGRAM_RESEND) {

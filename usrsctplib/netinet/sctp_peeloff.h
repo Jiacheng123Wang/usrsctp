@@ -42,7 +42,7 @@ struct sctp_peeloff_opt {
 #else
 	HANDLE s;
 #endif
-	sctp_assoc_t assoc_id;
+	usrsctp_assoc_t assoc_id;
 #if !(defined(_WIN32) && !defined(__Userspace__))
 	int new_sd;
 #else
@@ -51,15 +51,15 @@ struct sctp_peeloff_opt {
 };
 #endif /* HAVE_SCTP_PEELOFF_SOCKOPT */
 #if defined(_KERNEL)
-int sctp_can_peel_off(struct socket *, sctp_assoc_t);
-int sctp_do_peeloff(struct socket *, struct socket *, sctp_assoc_t);
+int sctp_can_peel_off(struct socket *, usrsctp_assoc_t);
+int sctp_do_peeloff(struct socket *, struct socket *, usrsctp_assoc_t);
 #if defined(HAVE_SCTP_PEELOFF_SOCKOPT)
-struct socket *sctp_get_peeloff(struct socket *, sctp_assoc_t, int *);
+struct socket *sctp_get_peeloff(struct socket *, usrsctp_assoc_t, int *);
 int sctp_peeloff_option(struct proc *p, struct sctp_peeloff_opt *peeloff);
 #endif /* HAVE_SCTP_PEELOFF_SOCKOPT */
 #endif /* _KERNEL */
 #if defined(__Userspace__)
-int sctp_can_peel_off(struct socket *, sctp_assoc_t);
-int sctp_do_peeloff(struct socket *, struct socket *, sctp_assoc_t);
+int sctp_can_peel_off(struct socket *, usrsctp_assoc_t);
+int sctp_do_peeloff(struct socket *, struct socket *, usrsctp_assoc_t);
 #endif /* __Userspace__ */
 #endif /* _NETINET_SCTP_PEELOFF_H_ */

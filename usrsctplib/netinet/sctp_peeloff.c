@@ -45,7 +45,7 @@
 #include <netinet/sctp_auth.h>
 
 int
-sctp_can_peel_off(struct socket *head, sctp_assoc_t assoc_id)
+sctp_can_peel_off(struct socket *head, usrsctp_assoc_t assoc_id)
 {
 	struct sctp_inpcb *inp;
 	struct sctp_tcb *stcb;
@@ -83,7 +83,7 @@ sctp_can_peel_off(struct socket *head, sctp_assoc_t assoc_id)
 }
 
 int
-sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
+sctp_do_peeloff(struct socket *head, struct socket *so, usrsctp_assoc_t assoc_id)
 {
 	struct sctp_inpcb *inp, *n_inp;
 	struct sctp_tcb *stcb;
@@ -166,7 +166,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 
 #if defined(HAVE_SCTP_PEELOFF_SOCKOPT)
 struct socket *
-sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
+sctp_get_peeloff(struct socket *head, usrsctp_assoc_t assoc_id, int *error)
 {
 	struct socket *newso;
 	struct sctp_inpcb *inp, *n_inp;

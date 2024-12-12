@@ -90,17 +90,17 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 {
 	int events = usrsctp_get_events(upcall_socket);
 
-	if (events & SCTP_EVENT_READ && !send_done) {
+	if (events & USR_SCTP_EVENT_READ && !send_done) {
 		char *buf;
-		struct sctp_recvv_rn rn;
+		struct usrsctp_recvv_rn rn;
 		ssize_t n;
 		struct sockaddr_storage addr;
 		buf = malloc(BUFFERSIZE);
 		int recv_flags = 0;
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_storage);
 		unsigned int infotype = 0;
-		socklen_t infolen = sizeof(struct sctp_recvv_rn);
-		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		socklen_t infolen = sizeof(struct usrsctp_recvv_rn);
+		memset(&rn, 0, sizeof(struct usrsctp_recvv_rn));
 
 		n = usrsctp_recvv(upcall_socket, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 				 &infolen, &infotype, &recv_flags);
@@ -120,7 +120,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 			return;
 		}
 		if (n > 0) {
-			if (recv_flags & MSG_NOTIFICATION) {
+			if (recv_flags & USR_MSG_NOTIFICATION) {
 				printf("Notification of length %d received.\n", (int)n);
 			} else {
 				printf("data of size %d received\n", (int)n);
@@ -129,14 +129,14 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 		free(buf);
 	}
 
-	if ((events & SCTP_EVENT_WRITE) && !done) {
-		struct sctp_sndinfo snd_info;
+	if ((events & USR_SCTP_EVENT_WRITE) && !done) {
+		struct usrsctp_sndinfo snd_info;
 		snd_info.snd_sid = 0;
 		snd_info.snd_flags = 0;
 		snd_info.snd_ppid = 0;
 		snd_info.snd_context = 0;
 		snd_info.snd_assoc_id = 0;
-		if (usrsctp_sendv(upcall_socket, buffer, strlen(buffer), NULL, 0, &snd_info, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+		if (usrsctp_sendv(upcall_socket, buffer, strlen(buffer), NULL, 0, &snd_info, (socklen_t)sizeof(struct usrsctp_sndinfo), USR_SCTP_SENDV_SNDINFO, 0) < 0) {
 			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				send_done = 1;
 				usrsctp_close(upcall_socket);
@@ -154,8 +154,8 @@ main(int argc, char *argv[])
 {
 	struct socket *listening_socket;
 	struct sockaddr_in6 addr;
-	struct sctp_udpencaps encaps;
-	struct sctp_assoc_value av;
+	struct usrsctp_udpencaps encaps;
+	struct usrsctp_assoc_value av;
 	const int on = 1;
 
 	if (argc > 1) {
@@ -173,25 +173,25 @@ main(int argc, char *argv[])
 		perror("usrsctp_socket");
 	}
 	usrsctp_set_non_blocking(listening_socket, 1);
-	if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
-		perror("usrsctp_setsockopt SCTP_I_WANT_MAPPED_V4_ADDR");
+	if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, USR_SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
+		perror("usrsctp_setsockopt USR_SCTP_I_WANT_MAPPED_V4_ADDR");
 	}
-	memset(&av, 0, sizeof(struct sctp_assoc_value));
-	av.assoc_id = SCTP_ALL_ASSOC;
+	memset(&av, 0, sizeof(struct usrsctp_assoc_value));
+	av.assoc_id = USR_SCTP_ALL_ASSOC;
 	av.assoc_value = 47;
 
-	if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, SCTP_CONTEXT, (const void*)&av, (socklen_t)sizeof(struct sctp_assoc_value)) < 0) {
-		perror("usrsctp_setsockopt SCTP_CONTEXT");
+	if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, USR_SCTP_CONTEXT, (const void*)&av, (socklen_t)sizeof(struct usrsctp_assoc_value)) < 0) {
+		perror("usrsctp_setsockopt USR_SCTP_CONTEXT");
 	}
-	if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
-		perror("usrsctp_setsockopt SCTP_RECVRCVINFO");
+	if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, USR_SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
+		perror("usrsctp_setsockopt USR_SCTP_RECVRCVINFO");
 	}
 	if (argc > 2) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		memset(&encaps, 0, sizeof(struct usrsctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[2]));
-		if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
-			perror("usrsctp_setsockopt SCTP_REMOTE_UDP_ENCAPS_PORT");
+		if (usrsctp_setsockopt(listening_socket, IPPROTO_SCTP, USR_SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct usrsctp_udpencaps)) < 0) {
+			perror("usrsctp_setsockopt USR_SCTP_REMOTE_UDP_ENCAPS_PORT");
 		}
 	}
 

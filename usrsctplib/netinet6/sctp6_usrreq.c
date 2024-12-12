@@ -484,7 +484,7 @@ sctp6_ctlinput(struct ip6ctlparam *ip6cp)
 				           sizeof(struct sctp_chunkhdr),
 				           sizeof(uint32_t),
 				           (caddr_t)&initiate_tag);
-				if ((chunk_type != SCTP_INITIATION) ||
+				if ((chunk_type != USR_SCTP_INITIATION) ||
 				    (ntohl(initiate_tag) != stcb->asoc.my_vtag)) {
 					SCTP_TCB_UNLOCK(stcb);
 					return;
